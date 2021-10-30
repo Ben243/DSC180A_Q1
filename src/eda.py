@@ -3,69 +3,83 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import seaborn as sns
+import numpy as np
 
 
-def scatter_matrix(data, outdir):
+def plot_timeseries(data_filename, outdir, filename="timeseries.png", function=None, window_size=20):
 
-    pd.plotting.scatter_matrix(data)
-    plt.suptitle('Independent Gaussians')
-    plt.savefig(os.path.join(outdir, 'scatter_matrix.png'))
+    if isinstance(data_filename, str):
+        data_filename = [data_filename]
+        data_list = [pd.read_csv(data_filename)]
+    if isinstance(data_filename, list):
+        data_list = [pd.read_csv(file) for file in data_filename]
 
+    plt.figure(figsize=(12, 8), dpi=80)
 
-def histograms_by_var(data, outdir):
-
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-    sns.violinplot(data=pd.melt(data), x='variable', y='value', ax=axes[0])
-    axes[0].title.set_text('Violin plot of each variable') 
-    pd.melt(data).groupby('variable')['value'].plot(kind='kde', ax=axes[1])
-    axes[1].title.set_text('distribution of each variable') 
-    plt.tight_layout()
-    plt.savefig(os.path.join(outdir, 'histogram.png'))
-
-
-def basic_stats(data, outdir):
-
-    out = pd.concat(
-        [data.mean().rename('means'), 
-         data.std().rename('standard deviations')], 
-        axis=1)
-
-    out.to_csv(os.path.join(outdir, 'basic_stats.csv'))
-
-
-def normality_test(data, outdir):
-
-    from scipy.stats import normaltest
-
-    out = (
-        data
-        .apply(lambda x: pd.Series(
-            normaltest(x), 
-            index=['skew-test + kurtosis-test', 'p-value']
-        )).T
-    )
-
-    out.to_csv(os.path.join(outdir, 'normality_results.csv'))
-
-    return
-
-
-def ks_results(data, outdir):
-
-    from scipy.stats import ks_2samp
-    res = ks_2samp(data['x_0'], data['x_1'])
-
-    out = pd.Series({'ks statistic': res.statistic, 'p-value': res.pvalue}).rename('KS Test')
-    out.to_csv(os.path.join(outdir, 'ks_results.csv'))
-
-
-def generate_stats(data, outdir, **kwargs):
-
-    os.makedirs(outdir, exist_ok=True)
-    scatter_matrix(data, outdir)
-    histograms_by_var(data, outdir)
-    basic_stats(data, outdir)
-    normality_test(data, outdir)
-    ks_results(data, outdir)
+    if function == "amplitude":
+        for i in range(len(data_list)):
+            data = data_list[i]["1->2Pkts"]
+            distance = []
+            for i in range(len(data)-window_size):
+                distance += [max(data[i:i+window_size]) - min(data[i:i+window_size])]
+            plt.plot(distance, label=data_filename[i])
+    elif function == "mean":
+        for i in range(len(data_list)):
+            data = data_list[i]["1->2Pkts"]
+            avge = []
+            for i in range(len(data)-window_size):
+                avge += [sum(data[i:i+window_size]) / window_size]
+            plt.plot(avge, label=data_filename[i])
+    else:
+        for i in range(len(data_list)):
+            data = data_list[i]
+            plt.plot(data["Time"], data["1->2Pkts"], label=data_filename[i])
     
-    return
+    if function == None:
+        plt.subtitle("1->2Pkts vs seconds")
+        plt.xlabel("Time (s)")
+        plt.ylabel("Packets")
+    else:
+        plt.suptitle(function + " of 1->2Pkts vs seconds. Window size: " + window_size)
+        plt.xlabel("Time (s)")
+        plt.ylabel(function + " (packets)")
+
+    plt.legend()
+
+    plt.savefig(os.path.join(outdir, filename))
+
+
+def plot_histogram(data_filename, outdir, filename="histogram.png", function=None, bin_size=10):
+
+    if isinstance(data_filename, str):
+        data_filename = [data_filename]
+        data_list = [pd.read_csv(data_filename)]
+    if isinstance(data_filename, list):
+        data_list = [pd.read_csv(file) for file in data_filename]
+
+    if function == "time delta":
+        for i in range(len(data_list)):
+            data = data_list[i]["packet_times"]
+            avg_time_delta = data.str.split(';').apply(mean_delta)
+            plt.plot(avg_time_delta)
+    else:
+        for i in range(len(data_list)):
+            data = data_list[i]
+            plt.plot(data["Time"], data["1->2Pkts"], label=data_filename[i])
+    
+    if function == None:
+        plt.subtitle("Frequency of number of packets sent per second")
+        plt.xlabel("Packets/sec")
+    else:
+        plt.suptitle("Average time between packets sent")
+        plt.xlabel("Time (ms)")
+
+    plt.legend()
+
+    plt.savefig(os.path.join(outdir, filename))
+
+def mean_delta(tl):
+    time_list = np.array(list(filter(None, tl)))
+    delta_list = [int(t2) - int(t1) for t1, t2 in zip(time_list, time_list[1:])]
+    return 0 if np.isnan(np.mean(delta_list)) else np.mean(delta_list)
+
