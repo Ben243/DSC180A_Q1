@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 
+GROUP_INTERVAL = 10
 
 # def generate_data(size=(1000, 3), **kwargs):
 
@@ -37,8 +38,8 @@ def clean_df(df):
     df_cleaned = df[df['Proto'] == df['Proto'].mode()[0]]
     # df_cleaned = df[df['IP1'] == df['IP1'].mode()[0]] 
 
-    df_cleaned['group'] = df_group['Time']//10 # generates 10 second groupings of the data.
-    df_cleaned = df_cleaned[df_cleaned['group'].isin()]
+    df_cleaned['group'] = df_group['Time']//GROUP_INTERVAL # generates 10 second groupings of the data.
+    
     timefilter = np.sort(df_cleaned['group'].unique())[3:] # takes out first thirty seconds from dataset
     df_cleaned = df_cleaned[df_cleaned['group'].isin(timefilter)] # comment out to include initial peak
     df_cleaned.drop(columns='group', inplace=True)
@@ -69,50 +70,64 @@ def featurize(df):
         '2->1Pkts': [min, max, np.mean, np.median, np.var],
         'mean_tdelta': [min, max, np.mean, np.var]
     })
-    features.columns = ["_".join(a) for a in features.columns.to_flat_index()]
+    features.columns = ["_".join(a) for a in features.columns.to_flat_index()] # flattens MultiIndex
     return features
 
-def data_generation(filepath, out='data/temp/'):
+def clean_label_data(filepath, features=False):
     '''
-    takes filepath data, cleans it and dumps it to temp
+    takes filepath data, cleans it and possibly converts it to features
+    dumps it to the output directory
+
+    keyword args:
+    filepath -- string file path for a csv file
+    # out -- output directory #TODO determine default: out='data/temp/'
+    features -- boolean for whether to convert data using featurize()
     '''
-    pth = datafile.path
-    if not pth.endswith('.csv'):
-        raise Exception('not csv format')
-        # print(pth.split('_')[1].split('-')[:-1])
-    # print(pd.read_csv(pth).head())
+    if not filepath.endswith('.csv'):
+        raise Exception('Not csv format')
 
     df = pd.read_csv(filepath)
     df = clean_df(df)
 
-    df = df[df['Proto'] == df['Proto'].mode()[0]] # cleaning from any IPV6
-    df['group'] = df['Time']//10 # generates 10 second group intervals to groupby on
-    df_feat = featurize(df) # make groups into feature space
-    df_feat['label_latency'] = pth.split('_')[1].split('-')[0] 
-    df_feat['label_packet_loss'] = pth.split('_')[1].split('-')[1] 
+    df['group'] = df['Time']//GROUP_INTERVAL # generates 10 second group intervals to groupby on
+
+    if features == True:
+        df = featurize(df) # convert 10 second groups into feature space (1 row)
+
+    df['label_latency'] = filepath.split('_')[1].split('-')[0] # add labels
+    df['label_packet_loss'] = filepath.split('_')[1].split('-')[1] 
 
     # filenm = pth.split('/')[-1].split('.')[0]
     # df_feat.to_csv(f'{out}{filenm}_features.csv')
 
-    return df_feat
+    return df
 
-def generate_using_all():
-    temp = []
-    for datafile in os.scandir('data'):
+def generate_labels(fileslist=[], folderpath='data', features=False):
+    '''
+    generates labeled data with either a list of files or a specified directory
+    returns dataframe
+    '''
+    
+    temp = 0
+
+    if len(fileslist) > 0:
+        for item in fileslist: # TODO maybe make this method better 
+            if not isinstance(temp, pd.DataFrame): # init temp as dataframe
+                temp = clean_label_data(filepath=pth, features=features)
+            else:
+                temp = temp.append(clean_label_data(filepath=pth, features=features))
+
+        return temp
+
+    for datafile in os.scandir(folderpath):
         pth = datafile.path
-        if pth.endswith('.csv'):
-            temp.append(data_generation(pth))
-    #         # print(pth.split('_')[1].split('-')[:-1])
-    #         print(pd.read_csv(pth).head())
-
-    #         df = pd.read_csv(pth)
-    #         df = clean_df(df)
-
-    #         df = df[df['Proto'] == df['Proto'].mode()[0]] # cleaning from any IPV6
-    #         df['group'] = df['Time']//10 # generates 10 second group intervals to groupby on
-    #         df_feat = featurize(df) # make groups into feature space
-    #         #TODO return a combined temp table with all different packet ratios
-    return
+            
+        if not isinstance(temp, pd.DataFrame): # init temp as dataframe
+            temp = clean_label_data(filepath=pth, features=features)
+        else:
+            temp = temp.append(clean_label_data(filepath=pth, features=features))
+    
+    return temp
 '''
 Feature Generation
 '''
