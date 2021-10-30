@@ -7,3 +7,7 @@ RUN apt-get -y install htop tmux
 USER jovyan
 
 RUN pip install --no-cache-dir pandas numpy matplotlib
+
+# RUN git clone https://github.com/Ben243/DSC180A_Q1
+
+# WORKDIR /home/DSC180A_Q1

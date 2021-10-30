@@ -62,15 +62,15 @@ def featurize(df):
     df['mean_tdelta'] = df['packet_times'].str.split(';').apply(mean_diff) # basically latency
     
     # reduce metrics to salient features for the model to use
-    group = df.groupby(['group']).agg({
+    features = df.groupby(['group']).agg({
         '1->2Bytes': [min, max, np.mean, np.median, np.var],
         '2->1Bytes': [min, max, np.mean, np.median, np.var],
         '1->2Pkts': [min, max, np.mean, np.median, np.var],
         '2->1Pkts': [min, max, np.mean, np.median, np.var],
         'mean_tdelta': [min, max, np.mean, np.var]
     })
-    
-    return group
+    features.columns = ["_".join(a) for a in features.columns.to_flat_index()]
+    return features
 
 def data_generation(filepath, out='data/temp/'):
     '''
@@ -88,16 +88,20 @@ def data_generation(filepath, out='data/temp/'):
     df = df[df['Proto'] == df['Proto'].mode()[0]] # cleaning from any IPV6
     df['group'] = df['Time']//10 # generates 10 second group intervals to groupby on
     df_feat = featurize(df) # make groups into feature space
+    df_feat['label_latency'] = pth.split('_')[1].split('-')[0] 
+    df_feat['label_packet_loss'] = pth.split('_')[1].split('-')[1] 
 
-    filenm = pth.split('/')[-1].split('.')[0]
-    df_feat.to_csv(f'{out}{filenm}_features.csv')
+    # filenm = pth.split('/')[-1].split('.')[0]
+    # df_feat.to_csv(f'{out}{filenm}_features.csv')
 
     return df_feat
 
 def generate_using_all():
-    # for datafile in os.scandir('data'):
-    #     pth = datafile.path
-    #     if pth.endswith('.csv'):
+    temp = []
+    for datafile in os.scandir('data'):
+        pth = datafile.path
+        if pth.endswith('.csv'):
+            temp.append(data_generation(pth))
     #         # print(pth.split('_')[1].split('-')[:-1])
     #         print(pd.read_csv(pth).head())
 
