@@ -86,7 +86,9 @@ def plot_histogram(data_filename, outdir, filename="histogram.png", function=Non
         for i in range(len(data_list)):
             data = data_list[i]["packet_times"]
             avg_time_delta = data.str.split(';').apply(mean_delta)
-            plt.plot(avg_time_delta)
+            plt.hist(avg_time_delta, alpha=0.5)
+            # avg_time_delta.plot.hist(alpha=0.5)
+
     # graphs data as is
     else:
         for i in range(len(data_list)):
@@ -100,7 +102,7 @@ def plot_histogram(data_filename, outdir, filename="histogram.png", function=Non
         plt.suptitle("Average time between packets sent")
         plt.xlabel("Time (ms)")
 
-    plt.legend()
+    plt.legend([pth.split('_')[1].split('.')[0] for pth in data_filename])
 
     plt.savefig(os.path.join(outdir, filename))
 

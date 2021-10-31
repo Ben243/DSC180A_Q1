@@ -46,7 +46,7 @@ def main(targets):
         csv1 = [join(temp_path, "s2_200-100-iperf.csv"), join(temp_path, "s2_200-500-iperf.csv")]
         csv2 = [join(temp_path, "s2_200-10000-iperf.csv"), join(temp_path, "s2_200-50000-iperf.csv")]
         
-        plot_histogram(csv1+csv1, out_path, filename="100-500-10000-50000_hist.png", function="time delta")
+        plot_histogram(csv1+csv2, out_path, filename="100-500-10000-50000_hist.png", function="time delta")
         
         plot_timeseries(csv1, out_path, filename="100-500_amp.png", function="amplitude")
         plot_timeseries(csv2, out_path, filename="10000-50000_amp.png", function="amplitude")
