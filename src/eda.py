@@ -32,16 +32,16 @@ def plot_timeseries(data_filename, outdir, filename="timeseries.png", function=N
         for i in range(len(data_list)):
             data = data_list[i]["1->2Pkts"]
             distance = []
-            for i in range(len(data)-window_size):
-                distance += [max(data[i:i+window_size]) - min(data[i:i+window_size])]
+            for j in range(len(data)-window_size):
+                distance += [max(data[j:j+window_size]) - min(data[j:j+window_size])]
             plt.plot(distance, label=data_filename[i])
     # for each time get the mean for the next window_size of data points
     elif function == "mean":
         for i in range(len(data_list)):
             data = data_list[i]["1->2Pkts"]
             avge = []
-            for i in range(len(data)-window_size):
-                avge += [sum(data[i:i+window_size]) / window_size]
+            for j in range(len(data)-window_size):
+                avge += [sum(data[j:j+window_size]) / window_size]
             plt.plot(avge, label=data_filename[i])
     # plots the packest sent per second as is
     else:
@@ -55,7 +55,7 @@ def plot_timeseries(data_filename, outdir, filename="timeseries.png", function=N
         plt.xlabel("Time (s)")
         plt.ylabel("Packets")
     else:
-        plt.suptitle(function + " of 1->2Pkts vs seconds. Window size: " + window_size)
+        plt.suptitle(f"{function} of 1->2Pkts vs seconds. Window size: {window_size}")
         plt.xlabel("Time (s)")
         plt.ylabel(function + " (packets)")
 

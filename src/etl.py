@@ -38,7 +38,7 @@ def clean_df(df):
     df_cleaned = df[df['Proto'] == df['Proto'].mode()[0]]
     # df_cleaned = df[df['IP1'] == df['IP1'].mode()[0]] 
 
-    df_cleaned['group'] = df_group['Time']//GROUP_INTERVAL # generates 10 second groupings of the data.
+    df_cleaned['group'] = df_cleaned['Time']//GROUP_INTERVAL # generates 10 second groupings of the data.
     
     timefilter = np.sort(df_cleaned['group'].unique())[3:] # takes out first thirty seconds from dataset
     df_cleaned = df_cleaned[df_cleaned['group'].isin(timefilter)] # comment out to include initial peak
@@ -60,6 +60,7 @@ def transform(df):
     # df['pkt_ratio'] = df.apply(pkt_ratio, axis=1) # consider removing too
     
     df['mean_tdelta'] = df['packet_times'].str.split(';').apply(mean_diff) # basically latency
+
 
     return df
 
@@ -98,9 +99,11 @@ def clean_label_data(filepath, features=False):
 
     df['group'] = df['Time']//GROUP_INTERVAL # generates 10 second group intervals to groupby on
 
-    if features == True:
+    if features:
         df = featurize(df) # convert 10 second groups into feature space (1 row)
-
+    else:
+        df = transform(df) # only adds columns and does not flatten into feature space
+    
     df['label_latency'] = filepath.split('_')[1].split('-')[0] # add labels
     df['label_packet_loss'] = filepath.split('_')[1].split('-')[1] 
 
