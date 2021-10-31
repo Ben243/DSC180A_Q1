@@ -49,18 +49,26 @@ def clean_df(df):
 
 
 '''
-Transformation
+Transformations
 '''
+
+def transform(df):
+    '''
+    generates new columns/metrics for features in data generation process
+    '''
+    # df['byte_ratio'] = df.apply(byte_ratio, axis=1) # probably not needed
+    # df['pkt_ratio'] = df.apply(pkt_ratio, axis=1) # consider removing too
+    
+    df['mean_tdelta'] = df['packet_times'].str.split(';').apply(mean_diff) # basically latency
+
+    return df
+
 
 def featurize(df):
     '''
     generates metrics and features for the data generation process
     '''
-    ## generate new columns/metrics for features
-    # df['byte_ratio'] = df.apply(byte_ratio, axis=1) # probably not needed
-    # df['pkt_ratio'] = df.apply(pkt_ratio, axis=1) # consider removing too
-    
-    df['mean_tdelta'] = df['packet_times'].str.split(';').apply(mean_diff) # basically latency
+    df = transform(df)
     
     # reduce metrics to salient features for the model to use
     features = df.groupby(['group']).agg({
@@ -80,7 +88,6 @@ def clean_label_data(filepath, features=False):
 
     keyword args:
     filepath -- string file path for a csv file
-    # out -- output directory #TODO determine default: out='data/temp/'
     features -- boolean for whether to convert data using featurize()
     '''
     if not filepath.endswith('.csv'):
@@ -111,7 +118,7 @@ def generate_labels(fileslist=[], folderpath='data', features=False):
     temp = 0
 
     if len(fileslist) > 0:
-        for item in fileslist: # TODO maybe make this method better 
+        for item in fileslist: # TODO maybe merge for loops somehow
             if not isinstance(temp, pd.DataFrame): # init temp as dataframe
                 temp = clean_label_data(filepath=pth, features=features)
             else:
