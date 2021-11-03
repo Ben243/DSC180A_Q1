@@ -5,14 +5,16 @@ import json
 import pandas as pd
 
 sys.path.insert(0, 'src')
-from etl import featurize, clean_df, clean_label_data #generate_data, save_data
+from etl import featurize, clean_df, clean_label_data, generate_labels #generate_data, save_data
 from eda import plot_timeseries, plot_histogram
 from utils import convert_notebook
 from os import listdir
 from os.path import isfile, join, expanduser
+from time import time_ns
 
 
 def main(targets):
+    #TODO consider moving running logic in nested if statements to functions declared outside of main
 
     data_config = json.load(open('config/data-params.json'))
     eda_config = json.load(open('config/eda-params.json'))
@@ -39,7 +41,7 @@ def main(targets):
         data = generate_data(**data_config)
         save_data(data, **data_config)
         """
-    if 'eda' in targets: #TODO do later
+    if 'eda' in targets: 
 
         temp_path = "data/temp"
         out_path = "notebooks/figures"
@@ -54,17 +56,26 @@ def main(targets):
         plot_timeseries(csv1, out_path, filename="100-500_mean.png", function="mean")
         plot_timeseries(csv2, out_path, filename="10000-50000_mean.png", function="mean")
         
-        """
-        try:
-            data
-        except NameError:
-            data = pd.read_csv(data_config['data_fp'])
 
-        generate_stats(data, **eda_config)
+    if 'features' in targets: #TODO make generate_labels less redundant
+        temp_path = "data/temp"
         
-        # execute notebook / convert to html
-        convert_notebook(**eda_config)
-        """
+        df = generate_labels(folderpath='data/temp', features=True)
+        
+        tm = time_ns()
+        df.to_csv(f'data/out/features_{tm}.csv')
+    
+    if 'test' in targets:
+        #Not Implemented
+        print('not implemented')
+        
+    if 'clean' in targets:
+        #Not Implemented
+        print('not implemented')
+
+    if 'all' in targets:
+        #Not Implemented
+        print('not implemented')
 
 if __name__ == '__main__':
 

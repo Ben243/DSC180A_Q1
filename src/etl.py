@@ -97,7 +97,7 @@ def clean_label_data(filepath, features=False):
     df = pd.read_csv(filepath)
     df = clean_df(df)
 
-    df['group'] = df['Time']//GROUP_INTERVAL # generates 10 second group intervals to groupby on
+    df['group'] = df['Time']//GROUP_INTERVAL  # generates 10 second group intervals to groupby on
 
     if features:
         df = featurize(df) # convert 10 second groups into feature space (1 row)
@@ -106,6 +106,8 @@ def clean_label_data(filepath, features=False):
     
     df['label_latency'] = filepath.split('_')[1].split('-')[0] # add labels
     df['label_packet_loss'] = filepath.split('_')[1].split('-')[1] 
+
+    # df['group'] = df['group'] + (df['label_latency']*70) + (df['label_packet_loss']*110) #TODO see if you need this
 
     # filenm = pth.split('/')[-1].split('.')[0]
     # df_feat.to_csv(f'{out}{filenm}_features.csv')
@@ -133,7 +135,8 @@ def generate_labels(fileslist=[], folderpath='data', features=False):
         pth = datafile.path
             
         if not isinstance(temp, pd.DataFrame): # init temp as dataframe
-            temp = clean_label_data(filepath=pth, features=features)
+            temp = clean_label_data(filepath=pth, features=features) 
+            #TODO change group id method, they overlap if done concurrently
         else:
             temp = temp.append(clean_label_data(filepath=pth, features=features))
     
