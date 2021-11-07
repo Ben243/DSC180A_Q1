@@ -117,12 +117,12 @@ def clean_label_data(filepath, features=False):
     df['label_latency'] = filepath.split('_')[1].split('-')[0] # add labels
     df['label_packet_loss'] = filepath.split('_')[1].split('-')[1] 
 
-    df['group'] = int(str(df['label_packet_loss']) + str(df['label_latency']) + \
-        str(df['group'])) #TODO utilize if unique groups are necessary
+    # df['group'] = int(str(df['label_packet_loss']) + str(df['label_latency']) + \
+    #     str(df['group'])) #TODO utilize if unique groups are necessary
 
     # filenm = pth.split('/')[-1].split('.')[0]
     # df_feat.to_csv(f'{out}{filenm}_features.csv')
-    
+
     return df
 
 def generate_labels(fileslist=[], folderpath='data', features=False):
