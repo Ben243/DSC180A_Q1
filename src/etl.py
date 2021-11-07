@@ -60,8 +60,13 @@ def transform(df):
     # df['pkt_ratio'] = df.apply(pkt_ratio, axis=1) # consider removing too
     
     df['mean_tdelta'] = df['packet_times'].str.split(';').apply(mean_diff) # basically latency
-
-
+    df['max_tdelta'] = df['packet_times'].str.split(';').apply(max_diff) # basically latency
+    df['1->2Pkts_rolling_2s_mean'] = df['1->2Pkts'].rolling(2).mean()
+    df['2->1Pkts_rolling_2s_mean'] = df['2->1Pkts'].rolling(2).mean()
+    df['1->2Pkts_rolling_3s_mean'] = df['1->2Pkts'].rolling(3).mean()
+    df['2->1Pkts_rolling_3s_mean'] = df['2->1Pkts'].rolling(3).mean()
+    # df['1->2Bytes_rolling_2s_mean'] = df['1->2Bytes'].rolling(2).mean() # further analysis needed for use
+    # df['2->1Bytes_rolling_2s_mean'] = df['1->2Bytes'].rolling(2).mean()
     return df
 
 
@@ -77,7 +82,12 @@ def featurize(df):
         '2->1Bytes': [min, max, np.mean, np.median, np.var],
         '1->2Pkts': [min, max, np.mean, np.median, np.var],
         '2->1Pkts': [min, max, np.mean, np.median, np.var],
-        'mean_tdelta': [min, max, np.mean, np.var]
+        'mean_tdelta': [min, max, np.mean, np.var],
+        'max_tdelta': [max, np.mean, np.var],
+        '1->2Pkts_rolling_2s_mean': [min, max, np.var],
+        '2->1Pkts_rolling_2s_mean': [min, max, np.var],
+        '1->2Pkts_rolling_3s_mean': [min, max, np.var],
+        '2->1Pkts_rolling_3s_mean': [min, max, np.var]
     })
     features.columns = ["_".join(a) for a in features.columns.to_flat_index()] # flattens MultiIndex
     return features
@@ -107,11 +117,12 @@ def clean_label_data(filepath, features=False):
     df['label_latency'] = filepath.split('_')[1].split('-')[0] # add labels
     df['label_packet_loss'] = filepath.split('_')[1].split('-')[1] 
 
-    # df['group'] = df['group'] + (df['label_latency']*70) + (df['label_packet_loss']*110) #TODO see if you need this
+    df['group'] = int(str(df['label_packet_loss']) + str(df['label_latency']) + \
+        str(df['group'])) #TODO utilize if unique groups are necessary
 
     # filenm = pth.split('/')[-1].split('.')[0]
     # df_feat.to_csv(f'{out}{filenm}_features.csv')
-
+    
     return df
 
 def generate_labels(fileslist=[], folderpath='data', features=False):
@@ -173,6 +184,18 @@ def mean_diff(lst):
     '''
     lst = np.array(list(filter(None, lst))) # takes out empty strings
     mn = np.mean([int(t) - int(s) for s, t in zip(lst, lst[1:])]) #TODO use numpy diff if needed
+    return 0 if np.isnan(mn) else mn
+
+def max_diff(lst):
+    '''
+    returns max difference in a column, 
+    meant to be used on transformed 'packet_times' column
+    >>> df['packet_times'].str.split(';').apply(max_diff)
+    '''
+    lst = np.array(list(filter(None, lst))).astype(np.int64)
+    # mn = max([int(t) - int(s) for s, t in zip(lst, lst[1:])]) if len(lst) > 0 else np.nan
+    diffs = np.diff(lst)
+    mn = max(diffs) if len(diffs) > 0 else np.nan # length of diffs might be zero
     return 0 if np.isnan(mn) else mn
 
 # rolling average (packets per second)

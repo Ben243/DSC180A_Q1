@@ -1,4 +1,6 @@
 {
     "size": [10000, 5],
-    "data_fp": "data/raw/data.csv"
+    "data_fp": "data/raw/data.csv",
+    "raw_path": "data/raw",
+    "temp_path": "data/temp"
 }
