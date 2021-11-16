@@ -78,16 +78,16 @@ def featurize(df):
     
     # reduce metrics to salient features for the model to use
     features = df.groupby(['group']).agg({
-        '1->2Bytes': [min, max, np.mean, np.median, np.var],
-        '2->1Bytes': [min, max, np.mean, np.median, np.var],
-        '1->2Pkts': [min, max, np.mean, np.median, np.var],
-        '2->1Pkts': [min, max, np.mean, np.median, np.var],
-        'mean_tdelta': [min, max, np.mean, np.var],
-        'max_tdelta': [max, np.mean, np.var],
-        '1->2Pkts_rolling_2s_mean': [min, max, np.var],
-        '2->1Pkts_rolling_2s_mean': [min, max, np.var],
-        '1->2Pkts_rolling_3s_mean': [min, max, np.var],
-        '2->1Pkts_rolling_3s_mean': [min, max, np.var]
+        '1->2Bytes': [min, max, np.mean, np.median, np.std, np.var],
+        '2->1Bytes': [min, max, np.mean, np.median, np.std, np.var],
+        '1->2Pkts': [min, max, np.mean, np.median, np.std, np.var],
+        '2->1Pkts': [min, max, np.mean, np.median, np.std, np.var],
+        'mean_tdelta': [min, max, np.mean, np.var, np.std],
+        'max_tdelta': [max, np.mean, np.var, np.std],
+        '1->2Pkts_rolling_2s_mean': [min, max, np.var, np.std],
+        '2->1Pkts_rolling_2s_mean': [min, max, np.var, np.std],
+        '1->2Pkts_rolling_3s_mean': [min, max, np.var, np.std],
+        '2->1Pkts_rolling_3s_mean': [min, max, np.var, np.std]
     })
     features.columns = ["_".join(a) for a in features.columns.to_flat_index()] # flattens MultiIndex
     return features

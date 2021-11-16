@@ -8,7 +8,7 @@ sys.path.insert(0, 'src')
 from etl import featurize, clean_df, clean_label_data, generate_labels #generate_data, save_data
 from eda import plot_timeseries, plot_histogram
 from utils import convert_notebook
-from os import listdir
+from os import listdir, remove
 from os.path import isfile, join, expanduser
 from time import time
 
@@ -52,24 +52,68 @@ def features_():
     df = generate_labels(folderpath=temp_path, features=True)
     
     tm = int(time())
-    df.to_csv(f'data/out/features_{tm}.csv')
+    df.to_csv(join(out_path,f'features_{tm}.csv'))
 
-def test_():
+def train_(latency_=True, pca_=True):
+    '''train target logic. Generates model (random forest) and produces output'''
+    featurelst = listdir(out_path)
+    featurelst.sort()
+    df = pd.read_csv(join(out_path,featurelst[-1])) # gets latest feature file from data/out
+    
+    df = df[df['label_latency'] <= 500]
+
+    cols = [col for col in df.columns if not 'label' in col]
+
+    X = features_label[cols].fillna(0) # removing nulls for model to train
+    latency_y = df['label_latency']
+    packet_y = df['label_packet_loss']
+    
+    ## splitting training data ##
+    if pca_: 
+        pca = PCA(n_components=21)
+        X_pca = pca.fit_transform(X) 
+
+        X_train, X_test, latency_y_train, latency_y_test, packet_y_train, packet_y_test = train_test_split(
+            X_pca, latency_y, packet_y, train_size=0.75, shuffle=True, random_state=42)
+    else: 
+        X_train, X_test, latency_y_train, latency_y_test, packet_y_train, packet_y_test = train_test_split(
+            X, latency_y, packet_y, train_size=0.75, shuffle=True, random_state=42)
+    
+    ## Predicting Latency ##
+    latency_rf = RandomForestRegressor(n_jobs=-1)
+    latency_rf.fit(X_train, latency_y_train)
+    r2_latency = latency_rf.score(X_test, latency_y_test)
+    df['label_latency_pred'] = latency_rf.predict(X)
+
+    ## Predicting Packet Loss ##
+    packet_rf = RandomForestRegressor(n_jobs=-1)
+    packet_rf.fit(X_train, packet_y_train)
+    r2_packet = packet_rf.score(X_test, packet_y_test)
+    df['label_packet_loss_pred'] = packet_rf.predict(X)
+
+    ## Model Output and metrics
+    print(f'R2 Score - Latency: {r2_latency}, Packet Loss: {r2_packet}') # feel free to add more metrics
+    df.to_csv(join(out_path,f'out_{featurelst[-1]}'))
+
+def test_(): # TODO revisit what counts as simulated data
     '''test target logic. Involves simulating entire ML process on sample test data.'''
+    data_()
+    features_()
+    train_()
     return
 
-def clean_():
+def clean_(): # TODO revisit which directories should be scrubbed
     '''clean target logic. removes all temporary/output files generated in directory.'''
-    for f in os.listdir(temp_path):
-        os.remove(os.path.join(temp_path, f))
+    for f in listdir(temp_path):
+        remove(join(temp_path, f))
         
-    for f in os.listdir(out_path):
-        os.remove(os.path.join(out_path, f))
+    # for f in listdir(out_path):
+    #     remove(join(temp_path, f))
 
-    for f in os.listdir(img_path):
-        os.remove(os.path.join(img_path, f))
+    # for f in listdir(img_path):
+    #     remove(join(temp_path, f))
+        
     return
-
 
 def main(targets):
 
@@ -91,6 +135,9 @@ def main(targets):
     if 'features' in targets:
         features_()
     
+    if 'train' in targets:
+        train_()
+
     if 'test' in targets:
         test_()
         
@@ -99,8 +146,9 @@ def main(targets):
 
     if 'all' in targets:
         data_()
-        eda()
+        eda_()
         features_()
+        train_()
         # clean()
 
 if __name__ == '__main__':
