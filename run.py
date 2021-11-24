@@ -10,7 +10,7 @@ sys.path.insert(0, 'src')
 from etl import featurize, clean_df, clean_label_data, generate_labels #generate_data, save_data
 from eda import plot_timeseries, plot_histogram
 from utils import convert_notebook
-from os import listdir, remove
+from os import listdir, remove, makedirs
 from os.path import isfile, join, expanduser
 from time import time
 
@@ -128,6 +128,9 @@ def main(targets):
 
     data_config = json.load(open('config/data-params.json'))
     eda_config = json.load(open('config/eda-params.json'))
+
+    for dr_ in [temp_path, out_path, test_temp_path, test_out_path]:
+        makedirs(dr_, exist_ok=True)
 
     # goes under the assumption that all the datafiles have their latency and loss in the name
     # cleans and adds features for all of the csv in the raw data folder
