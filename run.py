@@ -15,21 +15,25 @@ from os.path import isfile, join, expanduser
 from time import time
 
 raw_data_path = "data/raw"
-test_data_path = "test/testdata"
 temp_path = "data/temp"
 out_path = "data/out"
 img_path = "notebooks/figures"
 
+test_data_path = "test/testdata"
+test_temp_path = "test/temp"
+test_out_path = "test/out"
+
 def data_(test=False):
     '''data target logic. Generates temporary files that are cleaned.'''
     data_path = test_data_path if test else raw_data_path
+    temp_ = test_temp_path if test else temp_path
     
     data_csv_files = [join(data_path, f) for f in listdir(data_path)]
     dataframes = [clean_label_data(file) for file in data_csv_files]
     
     # temp_path = "data/temp"
     for i in range(len(data_csv_files)):
-        dataframes[i].to_csv(join(temp_path, listdir(data_path)[i]))
+        dataframes[i].to_csv(join(temp_, listdir(data_path)[i]))
     return
 
 def eda_():
@@ -49,26 +53,30 @@ def eda_():
     plot_timeseries(csv2, img_path, filename="10000-50000_mean.png", function="mean")
     return
 
-def features_():
+def features_(test=False):
 
     # temp_path = "data/temp"
-    
-    df = generate_labels(folderpath=temp_path, features=True)
-    
+    temp_ = test_temp_path if test else temp_path
+    out_ = test_out_path if test else out_path
+
+    df = generate_labels(folderpath=temp_, features=True)
+
     tm = int(time())
-    df.to_csv(join(out_path,f'features_{tm}.csv'))
+    df.to_csv(join(out_,f'features_{tm}.csv'))
 
 def train_(latency_=True, pca_=True):
     '''train target logic. Generates model (random forest) and produces output'''
-    featurelst = listdir(out_path)
+    out_ = test_out_path if test else out_path
+
+    featurelst = listdir(out_)
     featurelst.sort()
-    df = pd.read_csv(join(out_path,featurelst[-1])) # gets latest feature file from data/out
+    df = pd.read_csv(join(out_,featurelst[-1])) # gets latest feature file from data/out
     
     df = df[df['label_latency'] <= 500]
 
     cols = [col for col in df.columns if not 'label' in col]
 
-    X = features_label[cols].fillna(0) # removing nulls for model to train
+    X = features_label[cols].fillna(0) # removing nulls for model to train, TODO change to impute?
     latency_y = df['label_latency']
     packet_y = df['label_packet_loss']
     
@@ -103,21 +111,16 @@ def test_():
     '''test target logic. Involves simulating entire ML process on sample test data.'''
     data_(test=True)
     # eda_() #hard coded values, does not run
-    features_()
+    features_(test=True)
     clean_()
     # train_() # unfinished target
     return
 
 def clean_(): # TODO revisit which directories should be scrubbed
     '''clean target logic. removes all temporary/output files generated in directory.'''
-    for f in listdir(temp_path):
-        remove(join(temp_path, f))
-        
-    # for f in listdir(out_path):
-    #     remove(join(temp_path, f))
-
-    # for f in listdir(img_path):
-    #     remove(join(temp_path, f))
+    for dr_ in [test_temp_path, test_out_path]: #, out_path, img_path]:
+        for f in listdir(dr_):
+            remove(join(dr_, f))
         
     return
 
