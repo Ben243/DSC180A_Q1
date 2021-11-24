@@ -4,6 +4,7 @@ import sys
 import json
 import pandas as pd
 from sklearn.impute import SimpleImputer
+from sklearn.decomposition import PCA
 
 sys.path.insert(0, 'src')
 from etl import featurize, clean_df, clean_label_data, generate_labels #generate_data, save_data
@@ -14,19 +15,21 @@ from os.path import isfile, join, expanduser
 from time import time
 
 raw_data_path = "data/raw"
+test_data_path = "test/testdata"
 temp_path = "data/temp"
 out_path = "data/out"
 img_path = "notebooks/figures"
 
-def data_():
+def data_(test=False):
     '''data target logic. Generates temporary files that are cleaned.'''
-
-    data_csv_files = [join(raw_data_path, f) for f in listdir(raw_data_path)]
+    data_path = test_data_path if test else raw_data_path
+    
+    data_csv_files = [join(data_path, f) for f in listdir(data_path)]
     dataframes = [clean_label_data(file) for file in data_csv_files]
     
     # temp_path = "data/temp"
     for i in range(len(data_csv_files)):
-        dataframes[i].to_csv(join(temp_path, listdir(raw_data_path)[i]))
+        dataframes[i].to_csv(join(temp_path, listdir(data_path)[i]))
     return
 
 def eda_():
@@ -71,7 +74,7 @@ def train_(latency_=True, pca_=True):
     
     ## splitting training data ##
     if pca_: 
-        pca = PCA(n_components=21)
+        pca = PCA(n_components=21) 
         X_pca = pca.fit_transform(X) 
 
         X_train, X_test, latency_y_train, latency_y_test, packet_y_train, packet_y_test = train_test_split(
@@ -96,11 +99,13 @@ def train_(latency_=True, pca_=True):
     print(f'R2 Score - Latency: {r2_latency}, Packet Loss: {r2_packet}') # feel free to add more metrics
     df.to_csv(join(out_path,f'out_{featurelst[-1]}'))
 
-def test_(): # TODO revisit what counts as simulated data
+def test_():
     '''test target logic. Involves simulating entire ML process on sample test data.'''
-    data_()
+    data_(test=True)
+    # eda_() #hard coded values, does not run
     features_()
-    train_()
+    clean_()
+    # train_() # unfinished target
     return
 
 def clean_(): # TODO revisit which directories should be scrubbed
