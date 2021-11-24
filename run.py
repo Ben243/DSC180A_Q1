@@ -3,6 +3,7 @@
 import sys
 import json
 import pandas as pd
+from sklearn.impute import SimpleImputer
 
 sys.path.insert(0, 'src')
 from etl import featurize, clean_df, clean_label_data, generate_labels #generate_data, save_data

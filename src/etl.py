@@ -65,6 +65,10 @@ def transform(df):
     df['2->1Pkts_rolling_2s_mean'] = df['2->1Pkts'].rolling(2).mean()
     df['1->2Pkts_rolling_3s_mean'] = df['1->2Pkts'].rolling(3).mean()
     df['2->1Pkts_rolling_3s_mean'] = df['2->1Pkts'].rolling(3).mean()
+    df['2->1_interpacket'] = df['packet_dirs'].str.split(';').apply(cleanlist).apply(lambda x: np.diff(np.where(x == 1)[0]).mean())
+    df['1->2_interpacket'] = df['packet_dirs'].str.split(';').apply(cleanlist).apply(lambda x: np.diff(np.where(x == 2)[0]).mean())
+
+    
     # df['1->2Bytes_rolling_2s_mean'] = df['1->2Bytes'].rolling(2).mean() # further analysis needed for use
     # df['2->1Bytes_rolling_2s_mean'] = df['1->2Bytes'].rolling(2).mean()
     return df
@@ -76,18 +80,25 @@ def featurize(df):
     '''
     df = transform(df)
     
+    df[["packet_sizes", 'packet_dirs']] = df[["packet_sizes", 'packet_dirs']].apply(lambda x: x.str.split(';').apply(cleanlist))
+    df['1->2Mean_Bytes'] = df.apply(lambda x: get_packet_dir_sizes_mean(x.packet_sizes, x.packet_dirs, 2), axis=1).mean()
+    df['1->2Ct_Pkts'] = df.apply(lambda x: get_packet_dir_sizes_ct(x.packet_sizes, x.packet_dirs, 2), axis=1).mean()
+
     # reduce metrics to salient features for the model to use
     features = df.groupby(['group']).agg({
         '1->2Bytes': [min, max, np.mean, np.median, np.std, np.var],
         '2->1Bytes': [min, max, np.mean, np.median, np.std, np.var],
-        '1->2Pkts': [min, max, np.mean, np.median, np.std, np.var],
-        '2->1Pkts': [min, max, np.mean, np.median, np.std, np.var],
+        '1->2Pkts': [min, max, np.mean, np.median, np.std, np.var, sum],
+        '2->1Pkts': [min, max, np.mean, np.median, np.std, np.var, sum],
         'mean_tdelta': [min, max, np.mean, np.var, np.std],
         'max_tdelta': [max, np.mean, np.var, np.std],
-        '1->2Pkts_rolling_2s_mean': [min, max, np.var, np.std],
-        '2->1Pkts_rolling_2s_mean': [min, max, np.var, np.std],
-        '1->2Pkts_rolling_3s_mean': [min, max, np.var, np.std],
-        '2->1Pkts_rolling_3s_mean': [min, max, np.var, np.std]
+        '1->2Pkts_rolling_2s_mean': [min, max, np.var, np.std, sum],
+        '2->1Pkts_rolling_2s_mean': [min, max, np.var, np.std, sum],
+        '1->2Pkts_rolling_3s_mean': [min, max, np.var, np.std, sum],
+        '2->1Pkts_rolling_3s_mean': [min, max, np.var, np.std, sum],
+        '2->1_interpacket':[np.mean],
+        '1->2_interpacket':[np.mean]
+        
     })
     features.columns = ["_".join(a) for a in features.columns.to_flat_index()] # flattens MultiIndex
     return features
@@ -156,6 +167,13 @@ def generate_labels(fileslist=[], folderpath='data', features=False):
 Feature Generation
 '''
 
+def cleanlist(lst):
+    '''
+    helper function to help clean splitted semicolon separated value columns
+    removes empty string values and attempts to cast to int
+    '''
+    return np.array(list(filter(None, [x for x in lst if x not in ["[",']', ' ', '\n']])), dtype=int)
+
 def byte_ratio(x):
     '''
     gets byte transfer ratio 
@@ -198,7 +216,33 @@ def max_diff(lst):
     mn = max(diffs) if len(diffs) > 0 else np.nan # length of diffs might be zero
     return 0 if np.isnan(mn) else mn
 
-# rolling average (packets per second)
+def get_packet_dir_sizes(sizes, dir_, value):
+    """gets directional filtered output of one direction of traffic"""
+    sizes = cleanlist(sizes)
+    dir_ = cleanlist(dir_)
+    mask_ = dir_ == value
+    return sizes[mask_]
+
+def get_packet_dir_sizes_mean(sizes, dir_, value):
+    """gets mean of directional filtered output of one direction of traffic"""
+    sizes = cleanlist(sizes)
+    dir_ = cleanlist(dir_)
+    mask_ = dir_ == value
+    return sizes[mask_].mean()
+
+def get_packet_dir_sizes_var(sizes, dir_, value):
+    """gets variance of directional filtered output of one direction of traffic"""
+    sizes = cleanlist(sizes)
+    dir_ = cleanlist(dir_)
+    mask_ = dir_ == value
+    return sizes[mask_].var()
+
+def get_packet_dir_sizes_ct(sizes, dir_, value):
+    """gets packet counts of directional filtered output of one direction of traffic"""
+    sizes = cleanlist(sizes)
+    dir_ = cleanlist(dir_)
+    mask_ = dir_ == value
+    return sizes[mask_].shape[0]
 
 # distance between peaks and troughs
 
