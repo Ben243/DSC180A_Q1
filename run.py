@@ -18,7 +18,7 @@ temp_path = "data/temp"
 out_path = "data/out"
 test_path = "test/testdata"
 img_path = "notebooks/figures"
-figure_data_path = "data/figure_data"
+figure_data_path = "test/figure_data"
 model_path = "models"
 
 def etl_(raw_data_path=raw_data_path, temp_path=temp_path):
