@@ -102,6 +102,7 @@ def clean_label_data(filepath, features=False):
     features -- boolean for whether to convert data using featurize()
     '''
     if not filepath.endswith('.csv'):
+        print(filepath)
         raise Exception('Not csv format')
 
     df = pd.read_csv(filepath)
@@ -114,8 +115,8 @@ def clean_label_data(filepath, features=False):
     else:
         df = transform(df) # only adds columns and does not flatten into feature space
     
-    df['label_latency'] = filepath.split('_')[1].split('-')[0] # add labels
-    df['label_packet_loss'] = filepath.split('_')[1].split('-')[1] 
+    df['label_latency'] = filepath.split('_')[-1].split('-')[0] # add labels
+    df['label_packet_loss'] = filepath.split('_')[-1].split('-')[1] 
 
     # df['group'] = int(str(df['label_packet_loss']) + str(df['label_latency']) + \
     #     str(df['group'])) #TODO utilize if unique groups are necessary
