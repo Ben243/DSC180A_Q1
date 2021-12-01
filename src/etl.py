@@ -4,6 +4,8 @@ import os
 import numpy as np
 import pandas as pd
 
+pd.options.mode.chained_assignment = None # suppresses pandas warnings.
+
 GROUP_INTERVAL = 10
 
 # def generate_data(size=(1000, 3), **kwargs):
@@ -100,7 +102,7 @@ def featurize(df):
         '1->2_interpacket':[np.mean]
         
     })
-    features.columns = ["_".join(a) for a in features.columns.to_flat_index()] # flattens MultiIndex
+    features.columns = ["_".join(a) for a in features.columns.to_flat_index()] # flattens MultiIndex for a clean csv
     return features
 
 def clean_label_data(filepath, features=False):
@@ -155,7 +157,7 @@ def generate_labels(fileslist=[], folderpath='data', features=False):
 
     for datafile in os.scandir(folderpath):
         pth = datafile.path
-            
+        
         if not isinstance(temp, pd.DataFrame): # init temp as dataframe
             temp = clean_label_data(filepath=pth, features=features) 
             #TODO change group id method, they overlap if done concurrently
@@ -229,20 +231,6 @@ def get_packet_dir_sizes_mean(sizes, dir_, value):
     dir_ = cleanlist(dir_)
     mask_ = dir_ == value
     return sizes[mask_].mean()
-
-def get_packet_dir_sizes_var(sizes, dir_, value):
-    """gets variance of directional filtered output of one direction of traffic"""
-    sizes = cleanlist(sizes)
-    dir_ = cleanlist(dir_)
-    mask_ = dir_ == value
-    return sizes[mask_].var()
-
-def get_packet_dir_sizes_ct(sizes, dir_, value):
-    """gets packet counts of directional filtered output of one direction of traffic"""
-    sizes = cleanlist(sizes)
-    dir_ = cleanlist(dir_)
-    mask_ = dir_ == value
-    return sizes[mask_].shape[0]
 
 # distance between peaks and troughs
 
