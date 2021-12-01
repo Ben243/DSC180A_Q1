@@ -14,9 +14,11 @@ from os import listdir, remove
 from os.path import isfile, join, expanduser
 from time import time
 
+#TODO maybe put all these filepaths in the relevant params json
 raw_data_path = "data/raw"
 temp_path = "data/temp"
 out_path = "data/out"
+
 test_path = "test/testdata"
 img_path = "notebooks/figures"
 figure_data_path = "test/figure_data"
@@ -33,7 +35,7 @@ def etl_(raw_data_path=raw_data_path, temp_path=temp_path):
     return
 
 def eda_(temp_path=figure_data_path, img_path=img_path):
-    '''eda target logic. Generates all relevant visualizations used.'''
+    '''Generates all relevant visualizations used in early data analysis.'''
 
     csv1 = [join(temp_path, "s2_200-100-iperf.csv"), join(temp_path, "s2_200-500-iperf.csv")]
     csv2 = [join(temp_path, "s2_200-10000-iperf.csv"), join(temp_path, "s2_200-50000-iperf.csv")]
@@ -48,57 +50,16 @@ def eda_(temp_path=figure_data_path, img_path=img_path):
     return
 
 def features_(temp_path=temp_path, out_path=out_path):
-    
+    '''Generates a transformed feature set for the train target.'''
     df = generate_labels(folderpath=temp_path, features=True)
     
     tm = int(time())
     df.to_csv(join(out_path,f'features_{tm}.csv'))
-    df.to_csv(f'data/out/features_{tm}.csv')
-    
+
 def train_():
-    '''trains a model to predict latency and packet loss with the output of etl'''
-    train_model(out_path, model_path, 'model.pyc')
-
-def train_(latency_=True, pca_=True):
-    '''train target logic. Generates model (random forest) and produces output'''
-    featurelst = listdir(out_path)
-    featurelst.sort()
-    df = pd.read_csv(join(out_path,featurelst[-1])) # gets latest feature file from data/out
-    
-    df = df[df['label_latency'] <= 500]
-
-    cols = [col for col in df.columns if not 'label' in col]
-
-    X = features_label[cols].fillna(0) # removing nulls for model to train
-    latency_y = df['label_latency']
-    packet_y = df['label_packet_loss']
-    
-    ## splitting training data ##
-    if pca_: 
-        pca = PCA(n_components=21)
-        X_pca = pca.fit_transform(X) 
-
-        X_train, X_test, latency_y_train, latency_y_test, packet_y_train, packet_y_test = train_test_split(
-            X_pca, latency_y, packet_y, train_size=0.75, shuffle=True, random_state=42)
-    else: 
-        X_train, X_test, latency_y_train, latency_y_test, packet_y_train, packet_y_test = train_test_split(
-            X, latency_y, packet_y, train_size=0.75, shuffle=True, random_state=42)
-    
-    ## Predicting Latency ##
-    latency_rf = RandomForestRegressor(n_jobs=-1)
-    latency_rf.fit(X_train, latency_y_train)
-    r2_latency = latency_rf.score(X_test, latency_y_test)
-    df['label_latency_pred'] = latency_rf.predict(X)
-
-    ## Predicting Packet Loss ##
-    packet_rf = RandomForestRegressor(n_jobs=-1)
-    packet_rf.fit(X_train, packet_y_train)
-    r2_packet = packet_rf.score(X_test, packet_y_test)
-    df['label_packet_loss_pred'] = packet_rf.predict(X)
-
-    ## Model Output and metrics
-    print(f'R2 Score - Latency: {r2_latency}, Packet Loss: {r2_packet}') # feel free to add more metrics
-    df.to_csv(join(out_path,f'out_{featurelst[-1]}'))
+    '''trains a model to predict latency and packet loss with the output of etl and features.'''
+    # train_model(out_path, model_path, 'model.pyc')
+    train_model(out_path, model_path)
 
 def test_(): # TODO revisit what counts as simulated data
     '''test target logic. Involves simulating entire ML process on sample test data.'''
@@ -109,14 +70,10 @@ def test_(): # TODO revisit what counts as simulated data
 
 def clean_(): # TODO revisit which directories should be scrubbed
     '''clean target logic. removes all temporary/output files generated in directory.'''
-    for f in listdir(temp_path):
-        remove(join(temp_path, f))
-        
-    # for f in listdir(out_path):
-    #     remove(join(temp_path, f))
-
-    # for f in listdir(img_path):
-    #     remove(join(temp_path, f))
+    # for dr_ in [temp_path, out_path, model_path, img_path]:
+    for dr_ in [temp_path, out_path]:
+        for f in listdir(temp_path):
+            remove(join(temp_path, f))
         
     return
 
@@ -127,7 +84,7 @@ def main(targets):
 
     # goes under the assumption that all the datafiles have their latency and loss in the name
     # cleans and adds features for all of the csv in the raw data folder
-    if 'etl' in targets:
+    if 'etl' in targets or 'data' in targets:
         """
         data = generate_data(**data_config)
         save_data(data, **data_config)

@@ -4,6 +4,8 @@ import os
 import numpy as np
 import pandas as pd
 
+pd.options.mode.chained_assignment = None # suppresses pandas warnings.
+
 GROUP_INTERVAL = 10
 
 # def generate_data(size=(1000, 3), **kwargs):
