@@ -3,6 +3,7 @@
 import os
 import numpy as np
 import pandas as pd
+from os.path import join
 
 pd.options.mode.chained_assignment = None # suppresses pandas warnings.
 
@@ -40,7 +41,7 @@ def clean_df(df):
     df_cleaned = df[df['Proto'] == df['Proto'].mode()[0]]
     # df_cleaned = df[df['IP1'] == df['IP1'].mode()[0]] 
 
-    df_cleaned['group'] = df_cleaned['Time']//GROUP_INTERVAL # generates 10 second groupings of the data.
+    df_cleaned['group'] = df_cleaned['Time'].astype(int)//GROUP_INTERVAL # generates 10 second groupings of the data.
     
     timefilter = np.sort(df_cleaned['group'].unique())[3:] # takes out first thirty seconds from dataset
     df_cleaned = df_cleaned[df_cleaned['group'].isin(timefilter)] # comment out to include initial peak
@@ -121,7 +122,7 @@ def clean_label_data(filepath, features=False):
     df = pd.read_csv(filepath)
     df = clean_df(df)
 
-    df['group'] = df['Time']//GROUP_INTERVAL  # generates 10 second group intervals to groupby on
+    df['group'] = df['Time'].astype('int')//GROUP_INTERVAL  # generates 10 second group intervals to groupby on
 
     if features:
         df = featurize(df) # convert 10 second groups into feature space (1 row)
@@ -144,15 +145,14 @@ def generate_labels(fileslist=[], folderpath='data', features=False):
     generates labeled data with either a list of files or a specified directory
     returns dataframe
     '''
-    
     temp = 0
-
+    
     if len(fileslist) > 0:
         for item in fileslist: # TODO maybe merge for loops somehow
             if not isinstance(temp, pd.DataFrame): # init temp as dataframe
-                temp = clean_label_data(filepath=pth, features=features)
+                temp = clean_label_data(filepath=join(folderpath, item), features=features)
             else:
-                temp = temp.append(clean_label_data(filepath=pth, features=features))
+                temp = temp.append(clean_label_data(filepath=join(folderpath, item), features=features))
 
         return temp
 

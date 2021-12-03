@@ -25,13 +25,16 @@ model_path = "models"
 
 def etl_(raw_data_path=raw_data_path, temp_path=temp_path):
     '''etl target logic. Generates temporary files that are cleaned.'''
-
+    ## dump featurized data into temp folder
     data_csv_files = [join(raw_data_path, f) for f in listdir(raw_data_path)]
-    dataframes = [clean_label_data(file) for file in data_csv_files]
+    dataframes = [clean_label_data(file_, True) for file_ in data_csv_files]
     
     for i in range(len(data_csv_files)):
         dataframes[i].to_csv(join(temp_path, listdir(raw_data_path)[i]))
-    return
+
+    features_label = pd.concat([pd.read_csv(csv) for csv in data_csv_files]).drop(columns="group")
+    tm = int(time())
+    features_label.to_csv(join(out_path,f'features_{tm}.csv'))
 
 def eda_(temp_path=figure_data_path, img_path=img_path):
     '''Generates all relevant visualizations used in early data analysis.'''
@@ -48,13 +51,6 @@ def eda_(temp_path=figure_data_path, img_path=img_path):
     plot_timeseries(csv2, img_path, filename="10000-50000_mean.png", function="mean")
     return
 
-def features_(temp_path=temp_path, out_path=out_path):
-    '''Generates a transformed feature set for the train target.'''
-    df = generate_labels(folderpath=temp_path, features=True)
-    
-    tm = int(time())
-    df.to_csv(join(out_path,f'features_{tm}.csv'))
-
 def train_():
     '''trains a model to predict latency and packet loss with the output of etl and features.'''
     # train_model(out_path, model_path, 'model.pyc')
@@ -64,7 +60,6 @@ def test_(): # TODO revisit what counts as simulated data
     '''test target logic. Involves simulating entire ML process on sample test data.'''
     clean_()
     etl_(raw_data_path=test_path)
-    features_()
     train_()
 
 def clean_(): # TODO revisit which directories should be scrubbed
@@ -93,9 +88,6 @@ def main(targets):
     if 'eda' in targets: 
         eda_()
 
-    if 'features' in targets:
-        features_()
-    
     if 'train' in targets:
         train_()
 
