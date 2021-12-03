@@ -73,7 +73,7 @@ def train_model(data_path, pickle_path):
     loss_forest = RandomForestRegressor(n_jobs=n_jobs, n_estimators=n_estimators, max_depth=max_depth)
     loss_forest.fit(loss_X, loss_y)
 
-    data['pred_loss'] = loss_forest.predict(loss_X) # adding prediction loss as a feature for latency
+    data['pred_loss'] = np.exp(1/loss_forest.predict(loss_X)) # adding prediction loss as a feature for latency
     
     ## latency model training
     latency_X = SimpleImputer(missing_values=np.nan, strategy='mean').fit_transform(data[latency_cols]) # imputation with mean strat
