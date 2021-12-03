@@ -3,7 +3,6 @@ import os
 import sys
 import json
 import pandas as pd
-from sklearn.impute import SimpleImputer
 
 sys.path.insert(0, 'src')
 from etl import featurize, clean_df, clean_label_data, generate_labels #generate_data, save_data
@@ -14,7 +13,7 @@ from os import listdir, remove
 from os.path import isfile, join, expanduser
 from time import time
 
-#TODO maybe put all these filepaths in the relevant params json
+#TODO maybe put all these filepaths in a relevant params json
 raw_data_path = "data/raw"
 temp_path = "data/temp"
 out_path = "data/out"
