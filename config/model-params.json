@@ -4,5 +4,6 @@
     "n_estimators": 500,
     "max_depth": 15,
     "loss_model": "loss_model.pyc",
-    "latency_model": "latency_model.pyc"
+    "latency_model": "latency_model.pyc",
+    "test_size": 0.05
 }

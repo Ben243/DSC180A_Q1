@@ -29,12 +29,20 @@ def etl_(raw_data_path=raw_data_path, temp_path=temp_path):
     data_csv_files = [join(raw_data_path, f) for f in listdir(raw_data_path)]
     dataframes = [clean_label_data(file_, True) for file_ in data_csv_files]
     
-    for i in range(len(data_csv_files)):
-        dataframes[i].to_csv(join(temp_path, listdir(raw_data_path)[i]))
-
-    features_label = pd.concat([pd.read_csv(csv) for csv in data_csv_files]).drop(columns="group")
     tm = int(time())
-    features_label.to_csv(join(out_path,f'features_{tm}.csv'))
+
+    for i in range(len(data_csv_files)):
+        if (i == 0):
+            # dataframes[i].to_csv(join(temp_path, listdir(raw_data_path)[i]))    
+            dataframes[i].to_csv(join(out_path,f'features_{tm}.csv'))
+        else:
+            # dataframes[i].to_csv(join(temp_path, listdir(raw_data_path)[i]), header=False)
+            dataframes[i].to_csv(join(out_path,f'features_{tm}.csv'), header=False, mode='a')
+
+    # features_label = pd.concat([pd.read_csv(csv) for csv in data_csv_files]).drop(columns="group")
+    # features_label = pd.concat(map(pd.read_csv, data_csv_files))#.drop(columns="group")
+    # 
+    # features_label.to_csv(join(out_path,f'features_{tm}.csv'))
 
 def eda_(temp_path=figure_data_path, img_path=img_path):
     '''Generates all relevant visualizations used in early data analysis.'''
@@ -54,6 +62,7 @@ def eda_(temp_path=figure_data_path, img_path=img_path):
 def train_():
     '''trains a model to predict latency and packet loss with the output of etl and features.'''
     # train_model(out_path, model_path, 'model.pyc')
+    
     train_model(out_path, model_path)
 
 def test_(): # TODO revisit what counts as simulated data
@@ -66,8 +75,8 @@ def clean_(): # TODO revisit which directories should be scrubbed
     '''clean target logic. removes all temporary/output files generated in directory.'''
     # for dr_ in [temp_path, out_path, model_path, img_path]:
     for dr_ in [temp_path, out_path]:
-        for f in listdir(temp_path):
-            remove(join(temp_path, f))
+        for f in listdir(dr_):
+            remove(join(dr_, f))
         
     return
 
