@@ -9,27 +9,6 @@ pd.options.mode.chained_assignment = None # suppresses pandas warnings.
 
 GROUP_INTERVAL = 10
 
-# def generate_data(size=(1000, 3), **kwargs):
-
-#     n, k = size
-#     means = np.random.uniform(-3, 3, size=k)
-#     stds = np.random.uniform(size=k)
-    
-#     data = np.random.normal(means, stds, size)
-#     data = pd.DataFrame(data, columns=['x_%d' % i for i in range(k)])    
-
-#     return data
-
-
-# def save_data(data, data_fp, **kwargs):
-
-#     os.makedirs(os.path.split(data_fp)[0], exist_ok=True)
-
-#     data.to_csv(data_fp, index=False)
-
-#     return 
-
-
 '''
 Extraction/Cleaning
 '''
@@ -59,11 +38,9 @@ def transform(df):
     '''
     generates new columns/metrics for features in data generation process
     '''
-    # df['byte_ratio'] = df.apply(byte_ratio, axis=1) # probably not needed
-    # df['pkt_ratio'] = df.apply(pkt_ratio, axis=1) # consider removing too
     
-    df['mean_tdelta'] = df['packet_times'].str.split(';').apply(mean_diff) # basically latency
-    df['max_tdelta'] = df['packet_times'].str.split(';').apply(max_diff) # basically latency
+    df['mean_tdelta'] = df['packet_times'].str.split(';').apply(mean_diff)
+    df['max_tdelta'] = df['packet_times'].str.split(';').apply(max_diff)
     df['1->2Pkts_rolling_2s_mean'] = df['1->2Pkts'].rolling(2).mean()
     df['2->1Pkts_rolling_2s_mean'] = df['2->1Pkts'].rolling(2).mean()
     df['1->2Pkts_rolling_3s_mean'] = df['1->2Pkts'].rolling(3).mean()
@@ -71,9 +48,6 @@ def transform(df):
     df['2->1_interpacket'] = df['packet_dirs'].str.split(';').apply(cleanlist).apply(lambda x: np.diff(np.where(x == 1)[0]).mean())
     df['1->2_interpacket'] = df['packet_dirs'].str.split(';').apply(cleanlist).apply(lambda x: np.diff(np.where(x == 2)[0]).mean())
 
-    
-    # df['1->2Bytes_rolling_2s_mean'] = df['1->2Bytes'].rolling(2).mean() # further analysis needed for use
-    # df['2->1Bytes_rolling_2s_mean'] = df['1->2Bytes'].rolling(2).mean()
     return df
 
 
@@ -83,9 +57,9 @@ def featurize(df):
     '''
     df = transform(df)
     
-    df[["packet_sizes", 'packet_dirs']] = df[["packet_sizes", 'packet_dirs']].apply(lambda x: x.str.split(';').apply(cleanlist))
-    df['1->2Mean_Bytes'] = df.apply(lambda x: get_packet_dir_sizes_mean(x.packet_sizes, x.packet_dirs, 2), axis=1).mean()
-    df['1->2Ct_Pkts'] = df.apply(lambda x: get_packet_dir_sizes_ct(x.packet_sizes, x.packet_dirs, 2), axis=1).mean()
+    # df[["packet_sizes", 'packet_dirs']] = df[["packet_sizes", 'packet_dirs']].apply(lambda x: x.str.split(';').apply(cleanlist))
+    # df['1->2Mean_Bytes'] = df.apply(lambda x: get_packet_dir_sizes_mean(x.packet_sizes, x.packet_dirs, 2), axis=1).mean()
+    # df['1->2Ct_Pkts'] = df.apply(lambda x: get_packet_dir_sizes_ct(x.packet_sizes, x.packet_dirs, 2), axis=1).mean()
 
     # reduce metrics to salient features for the model to use
     features = df.groupby(['group']).agg({
@@ -117,7 +91,7 @@ def clean_label_data(filepath, features=False):
     '''
     if not filepath.endswith('.csv'):
         print(filepath)
-        raise Exception('Not csv format')
+        raise Exception('filepath not in csv format')
 
     df = pd.read_csv(filepath)
     df = clean_df(df)
@@ -130,13 +104,7 @@ def clean_label_data(filepath, features=False):
         df = transform(df) # only adds columns and does not flatten into feature space
     
     df['label_latency'] = filepath.split('_')[-1].split('-')[0] # add labels
-    df['label_packet_loss'] = filepath.split('_')[-1].split('-')[1] 
-
-    # df['group'] = int(str(df['label_packet_loss']) + str(df['label_latency']) + \
-    #     str(df['group'])) #TODO utilize if unique groups are necessary
-
-    # filenm = pth.split('/')[-1].split('.')[0]
-    # df_feat.to_csv(f'{out}{filenm}_features.csv')
+    df['label_packet_loss'] = filepath.split('_')[-1].split('-')[1]
 
     return df
 
@@ -167,7 +135,7 @@ def generate_labels(fileslist=[], folderpath='data', features=False):
     
     return temp
 '''
-Feature Generation
+Feature Generation Helper Functions
 '''
 
 def cleanlist(lst):
@@ -246,7 +214,3 @@ def get_packet_dir_sizes_ct(sizes, dir_, value):
     dir_ = cleanlist(dir_)
     mask_ = dir_ == value
     return sizes[mask_].shape[0]
-
-# distance between peaks and troughs
-
-# period and amplitude
