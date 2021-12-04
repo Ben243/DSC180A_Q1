@@ -65,7 +65,7 @@ def train_(test=False):
 
 def test_():
     '''test target logic. Involves simulating entire ML process on sample test data.'''
-    clean_()
+    # clean_() #TODO UNCOMMENT HGJKOHNSFKJ
     # eda_()
     etl_(raw_data_path=test_path)
     train_(test=True)
