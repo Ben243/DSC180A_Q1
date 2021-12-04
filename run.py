@@ -59,17 +59,16 @@ def eda_(temp_path=figure_data_path, img_path=img_path):
     plot_timeseries(csv2, img_path, filename="10000-50000_mean.png", function="mean")
     return
 
-def train_():
-    '''trains a model to predict latency and packet loss with the output of etl and features.'''
-    # train_model(out_path, model_path, 'model.pyc')
-    
-    train_model(out_path, model_path)
+def train_(test=False):
+    '''trains a model to predict latency and packet loss with the output of etl and features.'''    
+    train_model(out_path, model_path, test=test)
 
-def test_(): # TODO revisit what counts as simulated data
+def test_():
     '''test target logic. Involves simulating entire ML process on sample test data.'''
     clean_()
+    # eda_()
     etl_(raw_data_path=test_path)
-    train_()
+    train_(test=True)
 
 def clean_(): # TODO revisit which directories should be scrubbed
     '''clean target logic. removes all temporary/output files generated in directory.'''
