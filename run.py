@@ -61,7 +61,7 @@ def eda_(temp_path=figure_data_path, img_path=img_path):
 
 def train_(test=False):
     '''trains a model to predict latency and packet loss with the output of etl and features.'''    
-    train_model(out_path, model_path, test=test)
+    train_model(data_path=out_path, pickle_path=model_path, test=test)
 
 def test_():
     '''test target logic. Involves simulating entire ML process on sample test data.'''
