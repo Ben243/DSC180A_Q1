@@ -47,15 +47,15 @@ def train_model(data_path, pickle_path, out_path='data/out', test=False):
 
     ## feature selection
     loss_cols = [
-        "mean_tdelta_min", 'mean_tdelta_max', 'mean_tdelta_mean', 'max_tdelta_var', 
-        '1->2Bytes_var', '2->1Bytes_var', '1->2Pkts_var', '2->1Bytes_var', 
+        "mean_tdelta_min", 'mean_tdelta_max', 'mean_tdelta_mean', 'max_tdelta_var', '1->2Pkts_max', 
+        '1->2Bytes_var', '2->1Bytes_var', '1->2Pkts_var', '2->1Bytes_var', '1->2Bytes_max',
+        '1->2Pkts_rolling_2s_mean_max', '1->2Pkts_rolling_3s_mean_max', 
         '1->2Pkts_rolling_2s_mean_var', '2->1Pkts_rolling_2s_mean_var', 
         '1->2Pkts_rolling_3s_mean_var', '2->1Pkts_rolling_3s_mean_var']
     latency_cols = [
-        '1->2Bytes_max', '1->2Bytes_mean', '1->2Bytes_median', '1->2Bytes_min',
-        '1->2Pkts_max', '1->2Pkts_mean', '1->2Pkts_median', '1->2Pkts_min',
-        '1->2Pkts_rolling_2s_mean_max', '1->2Pkts_rolling_2s_mean_min',
-        '1->2Pkts_rolling_3s_mean_max', '1->2Pkts_rolling_3s_mean_min',
+        '1->2Bytes_mean', '1->2Bytes_median', '1->2Bytes_min', '1->2Pkts_mean', 
+        '1->2Pkts_median', '1->2Pkts_min',
+        '1->2Pkts_rolling_2s_mean_min', '1->2Pkts_rolling_3s_mean_min',
         '2->1Bytes_max', '2->1Bytes_mean', '2->1Bytes_median', '2->1Bytes_min',
         '2->1Pkts_max', '2->1Pkts_mean', '2->1Pkts_median', '2->1Pkts_min',
         '2->1Pkts_rolling_2s_mean_max', '2->1Pkts_rolling_2s_mean_min',
