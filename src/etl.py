@@ -45,8 +45,8 @@ def transform(df):
     df['2->1Pkts_rolling_2s_mean'] = df['2->1Pkts'].rolling(2).mean()
     df['1->2Pkts_rolling_3s_mean'] = df['1->2Pkts'].rolling(3).mean()
     df['2->1Pkts_rolling_3s_mean'] = df['2->1Pkts'].rolling(3).mean()
-    df['2->1_interpacket'] = df['packet_dirs'].str.split(';').apply(cleanlist).apply(lambda x: np.diff(np.where(x == 1)[0]).mean())
-    df['1->2_interpacket'] = df['packet_dirs'].str.split(';').apply(cleanlist).apply(lambda x: np.diff(np.where(x == 2)[0]).mean())
+    #df['2->1_interpacket'] = df['packet_dirs'].str.split(';').apply(cleanlist).apply(lambda x: np.diff(np.where(x == 1)[0]).mean())
+    #df['1->2_interpacket'] = df['packet_dirs'].str.split(';').apply(cleanlist).apply(lambda x: np.diff(np.where(x == 2)[0]).mean())
 
     return df
 
@@ -72,9 +72,10 @@ def featurize(df):
         '1->2Pkts_rolling_2s_mean': [min, max, np.var, np.std, sum],
         '2->1Pkts_rolling_2s_mean': [min, max, np.var, np.std, sum],
         '1->2Pkts_rolling_3s_mean': [min, max, np.var, np.std, sum],
-        '2->1Pkts_rolling_3s_mean': [min, max, np.var, np.std, sum],
-        '2->1_interpacket':[np.mean],
-        '1->2_interpacket':[np.mean]
+        '2->1Pkts_rolling_3s_mean': [min, max, np.var, np.std, sum]
+        #,
+        #'2->1_interpacket':[np.mean],
+        #'1->2_interpacket':[np.mean]
         
     })
     features.columns = ["_".join(a) for a in features.columns.to_flat_index()] # flattens MultiIndex
@@ -106,7 +107,7 @@ def clean_label_data(filepath, features=False):
     df['label_latency'] = filepath.split('_')[-1].split('-')[0] # add labels
     df['label_packet_loss'] = filepath.split('_')[-1].split('-')[1]
 
-    return df
+    return df.reset_index(drop=True)
 
 def generate_labels(fileslist=[], folderpath='data', features=False):
     '''

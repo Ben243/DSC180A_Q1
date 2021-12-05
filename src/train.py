@@ -28,7 +28,7 @@ randomstate = 2021
 
 
 # def train_model(data_path, pickle_path, filename): #TODO make a decision on 'filename' parameter
-def train_model(data_path, pickle_path, out_path='data/out'):
+def train_model(data_path, pickle_path, out_path='data/out', model_name='model'):
 
     ## load feature output
     featurelst = listdir(data_path)
@@ -73,11 +73,11 @@ def train_model(data_path, pickle_path, out_path='data/out'):
 
     ## model saving
 
-    with open(join(pickle_path, loss_model),"wb") as f:
+    with open(join(pickle_path, 'loss_' + model_name + '.pyc'),"wb") as f:
         pickle.dump(loss_pipe, f)
 
     # with open(join(pickle_path, latency_model),"wb") as f:
     #     pickle.dump(latency_forest, f)
 
-    with open(join(pickle_path, latency_model),"wb") as f:
+    with open(join(pickle_path, 'latency_' + model_name + '.pyc'),"wb") as f:
         pickle.dump(latency_pipe, f)

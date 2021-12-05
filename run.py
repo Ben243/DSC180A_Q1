@@ -6,7 +6,7 @@ import pandas as pd
 
 sys.path.insert(0, 'src')
 from etl import featurize, clean_df, clean_label_data, generate_labels #generate_data, save_data
-from eda import plot_timeseries, plot_histogram
+from eda import plot_timeseries, plot_histogram, plot_correlation
 from train import train_model
 from utils import convert_notebook
 from os import listdir, remove
@@ -23,28 +23,33 @@ img_path = "notebooks/figures"
 figure_data_path = "test/figure_data"
 model_path = "models"
 
-def etl_(raw_data_path=raw_data_path, temp_path=temp_path):
+def init_():
+    if not os.path.isfile('./data/'):
+        os.mkdir('./data/')
+        os.mkdir(raw_data_path)
+        os.mkdir(temp_path)
+        os.mkdir(out_path)
+    if not os.path.isfile(img_path):
+        os.mkdir(img_path)
+
+def etl_(raw_data_path=raw_data_path, temp_path=temp_path, out_path=out_path):
     '''etl target logic. Generates temporary files that are cleaned.'''
     ## dump featurized data into temp folder
     data_csv_files = [join(raw_data_path, f) for f in listdir(raw_data_path)]
-    dataframes = [clean_label_data(file_, True) for file_ in data_csv_files]
     
     tm = int(time())
 
     for i in range(len(data_csv_files)):
-        if (i == 0):
-            # dataframes[i].to_csv(join(temp_path, listdir(raw_data_path)[i]))    
-            dataframes[i].to_csv(join(out_path,f'features_{tm}.csv'))
+        file = data_csv_files[i]
+        df = clean_label_data(file, True)
+        df.to_csv(join(temp_path, listdir(raw_data_path)[i]), index=False)
+    
+        if (i == 0):  
+            df.to_csv(join(out_path,f'features_{tm}.csv'), index=False)
         else:
-            # dataframes[i].to_csv(join(temp_path, listdir(raw_data_path)[i]), header=False)
-            dataframes[i].to_csv(join(out_path,f'features_{tm}.csv'), header=False, mode='a')
+            df.to_csv(join(out_path,f'features_{tm}.csv'), header=False, mode='a', index=False)
 
-    # features_label = pd.concat([pd.read_csv(csv) for csv in data_csv_files]).drop(columns="group")
-    # features_label = pd.concat(map(pd.read_csv, data_csv_files))#.drop(columns="group")
-    # 
-    # features_label.to_csv(join(out_path,f'features_{tm}.csv'))
-
-def eda_(temp_path=figure_data_path, img_path=img_path):
+def eda_(temp_path=figure_data_path, img_path=img_path, feature_path=out_path):
     '''Generates all relevant visualizations used in early data analysis.'''
 
     csv1 = [join(temp_path, "s2_200-100-iperf.csv"), join(temp_path, "s2_200-500-iperf.csv")]
@@ -57,31 +62,39 @@ def eda_(temp_path=figure_data_path, img_path=img_path):
     
     plot_timeseries(csv1, img_path, filename="100-500_mean.png", function="mean")
     plot_timeseries(csv2, img_path, filename="10000-50000_mean.png", function="mean")
+    
+    plot_correlation(feature_path, img_path)
+    
     return
 
-def train_():
+def train_(data_path=out_path, model_path=model_path, model_name='model'):
     '''trains a model to predict latency and packet loss with the output of etl and features.'''
     # train_model(out_path, model_path, 'model.pyc')
     
-    train_model(out_path, model_path)
+    train_model(data_path, model_path, model_name=model_name)
 
 def test_(): # TODO revisit what counts as simulated data
     '''test target logic. Involves simulating entire ML process on sample test data.'''
+    
     clean_()
-    etl_(raw_data_path=test_path)
-    train_()
+    etl_(raw_data_path=test_path, temp_path = "test/testtemp", out_path = 'test/test_features')
+    feature_path = join('test/test_features', listdir('test/test_features')[0])
+    eda_(feature_path = feature_path)
+    train_(data_path='test/test_features', model_name='test_model')
 
 def clean_(): # TODO revisit which directories should be scrubbed
     '''clean target logic. removes all temporary/output files generated in directory.'''
     # for dr_ in [temp_path, out_path, model_path, img_path]:
-    for dr_ in [temp_path, out_path]:
+    for dr_ in [temp_path, out_path, img_path, 'test/testtemp', 'test/test_features']:
         for f in listdir(dr_):
             remove(join(dr_, f))
         
     return
 
 def main(targets):
-
+    
+    init_()
+    
     data_config = json.load(open('config/data-params.json'))
     eda_config = json.load(open('config/eda-params.json'))
 

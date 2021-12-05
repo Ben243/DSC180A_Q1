@@ -6,6 +6,17 @@ import seaborn as sns
 import numpy as np
 
 """
+Creates a correlation matrix for the features
+"""
+def plot_correlation(data_filename, outdir, filename="correlation_matrix.png"):
+    plt.figure(figsize=(20,25))
+    data = pd.read_csv(data_filename)
+    corr_matrix = sns.heatmap(data.corr(), cmap="coolwarm",linewidths=.05);
+    fig = corr_matrix.get_figure()
+    fig.savefig(os.path.join(outdir, filename))
+    return
+
+"""
 Creates a time plot of the number of packets being sent per second
 
 data_filename: filename of a dataset of a single conversation. can take a list of filenames and overlap graphs
