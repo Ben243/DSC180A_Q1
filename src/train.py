@@ -97,3 +97,4 @@ def train_model(data_path, pickle_path, out_path='data/out', test=False):
 
     with open(join(pickle_path, latency_model_path),"wb") as f:
         pickle.dump(latency_pipe, f)
+

@@ -3,15 +3,17 @@ import os
 import sys
 import json
 import pandas as pd
+from os import listdir, remove
+from os.path import isfile, join, expanduser
+from time import time
 
 sys.path.insert(0, 'src')
 from etl import featurize, clean_df, clean_label_data, generate_labels #generate_data, save_data
 from eda import plot_timeseries, plot_histogram
 from train import train_model
+from metrics import plot_metrics
 from utils import convert_notebook
-from os import listdir, remove
-from os.path import isfile, join, expanduser
-from time import time
+
 
 #TODO maybe put all these filepaths in a relevant params json
 raw_data_path = "data/raw"
@@ -63,6 +65,11 @@ def train_(test=False):
     '''trains a model to predict latency and packet loss with the output of etl and features.'''    
     train_model(data_path=out_path, pickle_path=model_path, test=test)
 
+def metrics_(temp_path=figure_data_path, img_path=img_path):
+    plot_metrics(outdir=img_path, filename='sensitivity.png', function='sensitivity')
+    plot_metrics(outdir=img_path, filename='residuals.png', function='residual')
+    return
+
 def test_():
     '''test target logic. Involves simulating entire ML process on sample test data.'''
     # clean_() #TODO UNCOMMENT HGJKOHNSFKJ
@@ -98,6 +105,8 @@ def main(targets):
 
     if 'train' in targets:
         train_()
+    if 'metrics' in targets:
+        metrics_()
 
     if 'test' in targets:
         test_()
