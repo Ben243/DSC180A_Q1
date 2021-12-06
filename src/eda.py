@@ -5,19 +5,19 @@ import os
 import seaborn as sns
 import numpy as np
 
-"""
-Creates a time plot of the number of packets being sent per second
-
-data_filename: filename of a dataset of a single conversation. can take a list of filenames and overlap graphs
-outdir: directry to put the graph
-filename: name of the graph image to save
-function: takes in a string to create a graph using a function to apply to the data
-    amplitude: takes the difference between the max and min of the data inside a time window
-    mean: takes the average of all the data in a moving time window
-    None (default): Plots data as is, no window size needed
-window_size: the amount of data points to apply the function to
-"""
 def plot_timeseries(data_filename, outdir, filename="timeseries.png", function=None, window_size=20):
+    """
+    Creates a time plot of the number of packets being sent per second
+
+    data_filename: filename of a dataset of a single conversation. can take a list of filenames and overlap graphs
+    outdir: directry to put the graph
+    filename: name of the graph image to save
+    function: takes in a string to create a graph using a function to apply to the data
+        amplitude: takes the difference between the max and min of the data inside a time window
+        mean: takes the average of all the data in a moving time window
+        None (default): Plots data as is, no window size needed
+    window_size: the amount of data points to apply the function to
+    """
     # turn filename to coresponding dataframe
     if isinstance(data_filename, str):
         data_filename = [data_filename]
