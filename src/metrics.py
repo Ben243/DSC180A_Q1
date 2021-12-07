@@ -2,6 +2,7 @@ import pickle
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 from os import listdir
 from os.path import join
 
@@ -92,21 +93,47 @@ def generate_metrics(model, time, label, metric_path, data_path, test_data_path,
             valid_acc[i] = get_acc(y_valid, valid_pred, thresh_l[i])
             test_acc[i] = get_acc(y_test, test_pred, thresh_l[i])
 
+            
+        def format_func1(value, tick_number):
+            # find number of multiples of pi/2
+            N = np.exp(value).astype(int)
+            return f"1/{N}"
+
+        def format_func2(value, tick_number):
+            # find number of multiples of pi/2
+            N = np.exp(value).astype(int)
+            return N
+            
         plt.figure(figsize=(10,6))
 
         plt.plot(thresh_l, acc, label=f'training {label}')
         plt.plot(thresh_l, valid_acc, label=f'validation {label}')
         plt.plot(thresh_l, test_acc, label=f'test {label}')
         plt.title(f'{label} sensitivity curve')
+        plt.xlabel('threshold')
+        plt.ylabel('accuracy')
+        plt.axvline(x=0.10, color='r', linestyle='--', alpha=0.5)
+
         plt.legend()
 
         figure_name = f'{time}_{label}_sensitivity_curve.png'
         plt.savefig(join(metric_path, figure_name))
 
         plt.figure(figsize=(10,6))
-        plt.scatter(y_valid, valid_pred - y_valid, c=other_label_data)
-        cb = plt.colorbar()
-        cb.set_label(f'Color Scale {other}')
+        scatter = plt.scatter(y_valid, valid_pred - y_valid, c=other_label_data)
+        plt.title(f'{label} Residual plot')
+        plt.xlabel(label)
+        plt.ylabel('Residual')
+        
+        plt.axhline(y=0.0, color='r', linestyle='-', alpha=0.5)
+        
+        if label == 'loss':
+            plt.axes().xaxis.set_major_formatter(plt.FuncFormatter(format_func1))
+            plt.colorbar(scatter, format=ticker.FuncFormatter(format_func2)).set_label(f'Color Scale of log {other}')
+        if label == 'latency':
+            plt.axes().xaxis.set_major_formatter(plt.FuncFormatter(format_func2))
+            plt.colorbar(scatter, format=ticker.FuncFormatter(format_func1)).set_label(f'Color Scale of log {other}')
+
 
         figure_name = f'{time}_{label}_residual_plot.png'
         plt.savefig(join(metric_path, figure_name))

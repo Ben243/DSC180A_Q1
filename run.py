@@ -41,12 +41,18 @@ def init_():
     if not os.path.isdir('test/test_features'):
         os.mkdir('test/test_features')
 
-def etl_(raw_data_path=raw_data_path, temp_path=temp_path, out_path=out_path):
+def etl_(raw_data_path=raw_data_path, temp_path=temp_path, out_path=out_path, test=False):
     '''etl target logic. Generates temporary files that are cleaned.'''
     ## dump featurized data into temp folder
     data_csv_files = [join(raw_data_path, f) for f in listdir(raw_data_path)]
     
-    tm = int(time())
+    if test:
+        filename = 'test_featureset.csv'
+    else:
+        tm = int(time())
+        filename = f'features_{tm}.csv'
+    
+    
 
     for i in range(len(data_csv_files)):
         file = data_csv_files[i]
@@ -54,9 +60,9 @@ def etl_(raw_data_path=raw_data_path, temp_path=temp_path, out_path=out_path):
         df.to_csv(join(temp_path, listdir(raw_data_path)[i]), index=False)
     
         if (i == 0):  
-            df.to_csv(join(out_path,f'features_{tm}.csv'), index=False)
+            df.to_csv(join(out_path, filename), index=False)
         else:
-            df.to_csv(join(out_path,f'features_{tm}.csv'), header=False, mode='a', index=False)
+            df.to_csv(join(out_path, filename), header=False, mode='a', index=False)
 
 def eda_(temp_path=figure_data_path, img_path=img_path, feature_path='test/test_features'):
     '''Generates all relevant visualizations used in early data analysis.'''
@@ -80,14 +86,14 @@ def train_(data_path=out_path, model_path=model_path, model_name='model'):
     '''trains a model to predict latency and packet loss with the output of etl and features.'''
     # train_model(out_path, model_path, 'model.pyc')
     
-    train_model(data_path, model_path, model_name=model_name)
+    train_model(data_path, model_path, model_name=model_name, test=True)
     metrics_
 
 def test_():
     '''test target logic. Involves simulating entire ML process on sample test data.'''
     
     clean_()
-    etl_(raw_data_path=test_path, temp_path = "test/testtemp", out_path = 'test/test_features')
+    etl_(raw_data_path=test_path, temp_path = "test/testtemp", out_path = 'test/test_features', test=True)
     feature_path = join('test/test_features', listdir('test/test_features')[0])
     eda_(feature_path = feature_path)
     train_(data_path='test/test_features', model_name='test_model')
@@ -95,7 +101,7 @@ def test_():
     
     
 def metrics_(latency_name, loss_name, model_path=model_path, metric_path=img_path, test_data_path=test_path, test=False):
-    etl_(raw_data_path=test_path, temp_path='test/testtemp', out_path = 'test/test_features')
+    etl_(raw_data_path=test_path, temp_path='test/testtemp', out_path = 'test/test_features', test=True)
         
     time_latency = latency_name.split('_')[-1].split('.')[0]
     time_loss = loss_name.split('_')[-1].split('.')[0]
@@ -104,7 +110,7 @@ def metrics_(latency_name, loss_name, model_path=model_path, metric_path=img_pat
         latency_model = unpickle(latency_name, model_path)
         generate_metrics(latency_model, time_latency, 'latency', metric_path, out_path, 'test/test_features', test=test)
     if loss_name != None:
-        loss_model = unpickle(latency_name, model_path)
+        loss_model = unpickle(loss_name, model_path)
         generate_metrics(loss_model, time_loss, 'loss', metric_path, out_path, 'test/test_features', test=test)
         
     return

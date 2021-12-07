@@ -29,7 +29,7 @@ randomstate = 2021
 
 
 # def train_model(data_path, pickle_path, filename): #TODO make a decision on 'filename' parameter
-def train_model(data_path, pickle_path, out_path='data/out', model_name='model', test=False):
+def train_model(data_path, pickle_path, out_path='data/out', model_name=None, test=False):
 
     ## load feature output
     featurelst = listdir(data_path)
@@ -41,11 +41,11 @@ def train_model(data_path, pickle_path, out_path='data/out', model_name='model',
     
     if not test:
         train_data, validation_data = train_test_split(data, test_size=test_size, random_state=randomstate)
-        train_data.to_csv(join(out_path,f'train_{tm}.csv'))
-        validation_data.to_csv(join(out_path,f'validation_{tm}.csv'))
+        train_data.to_csv(join(out_path,f'train_{tm}.csv'), index=False)
+        validation_data.to_csv(join(out_path,f'validation_{tm}.csv'), index=False)
     else:
         tm = 'test'
-        data.to_csv('test/test_features/test_featureset.csv')
+        data.to_csv('test/test_features/test_featureset.csv', index=False)
         train_data = data
     
     ## feature selection
@@ -56,9 +56,9 @@ def train_model(data_path, pickle_path, out_path='data/out', model_name='model',
         '1->2Pkts_rolling_3s_mean_var', '2->1Pkts_rolling_3s_mean_var']
     latency_cols = list(set(data.columns) - set(loss_cols))# + ['pred_loss']
 
-
+    loss_X = train_data
     ## packet loss model training
-    loss_X = train_data[loss_cols]    
+    #loss_X = train_data[loss_cols]    
     loss_y = np.log(train_data['label_packet_loss']) # log loss
 
     
@@ -71,8 +71,9 @@ def train_model(data_path, pickle_path, out_path='data/out', model_name='model',
 
     # data['pred_loss'] = loss_forest.predict(loss_X) # adding prediction loss as a feature for latency
     
+    latency_X = train_data
     ## latency model training
-    latency_X = train_data[latency_cols]
+    #latency_X = train_data[latency_cols]
     latency_y = np.log(train_data['label_latency'])
 
     latency_pipe = Pipeline(steps=[
@@ -85,11 +86,21 @@ def train_model(data_path, pickle_path, out_path='data/out', model_name='model',
 
     ## model saving
 
-    with open(join(pickle_path, f'loss_{tm}.pyc'),"wb") as f:
-        pickle.dump(loss_pipe, f)
+    if test == False:
+        with open(join(pickle_path, f'loss_{tm}.pyc'),"wb") as f:
+            pickle.dump(loss_pipe, f)
 
-    # with open(join(pickle_path, latency_model),"wb") as f:
-    #     pickle.dump(latency_forest, f)
+        # with open(join(pickle_path, latency_model),"wb") as f:
+        #     pickle.dump(latency_forest, f)
 
-    with open(join(pickle_path, f'latency_{tm}.pyc'),"wb") as f:
-        pickle.dump(latency_pipe, f)
+        with open(join(pickle_path, f'latency_{tm}.pyc'),"wb") as f:
+            pickle.dump(latency_pipe, f)
+    else:
+        with open(join(pickle_path, 'loss_test_model.pyc'),"wb") as f:
+            pickle.dump(loss_pipe, f)
+
+        # with open(join(pickle_path, latency_model),"wb") as f:
+        #     pickle.dump(latency_forest, f)
+
+        with open(join(pickle_path, 'latency_test_model.pyc'),"wb") as f:
+            pickle.dump(latency_pipe, f)
