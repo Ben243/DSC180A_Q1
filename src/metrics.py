@@ -20,36 +20,70 @@ def get_acc(target, pred, thresh):
 
 def generate_metrics(model, time, label, metric_path, data_path, test_data_path, test):
     
+    def format_func1(value, tick_number):
+        # find number of multiples of pi/2
+        N = np.exp(value).astype(int)
+        return f"1/{N}"
+
+    def format_func2(value, tick_number):
+        # find number of multiples of pi/2
+        N = np.exp(value).astype(int)
+        return N
+    
     if test:
         test_acc = [0 for i in thresh_l]
         test_data = pd.read_csv(join(test_data_path, listdir(test_data_path)[-1]))
         test_pred = model.predict(test_data)
         if label == 'loss':
+            other='latency'
             y_test = np.log(test_data['label_packet_loss'])
             other_label_data = np.log(test_data['label_latency'])
         if label == 'latency':
+            other = 'loss'
             y_test = np.log(test_data['label_latency'])
             other_label_data = np.log(test_data['label_packet_loss'])
         
+        index = 0
         for i in range(len(thresh_l)):
+            if thresh_l[i] == 0.1:
+                index = i
             test_acc[i] = get_acc(y_test, test_pred, thresh_l[i])
+        
+        
         
         plt.figure(figsize=(10,6))
 
         plt.plot(thresh_l, test_acc, label=f'test {label}')
-        plt.title(f'{label} sensitivity curve')
+        plt.title(f'Accuracy at 10% tolerance: test_acc:{test_acc[index]:.3f}')
+        plt.xlabel('threshold')
+        plt.ylabel('accuracy')
+        plt.axvline(x=0.10, color='r', linestyle='--', alpha=0.5)
+        plt.suptitle(f'{label} sensitivity curve', fontsize=18)
+
         plt.legend()
 
-        figure_name = f'test_{label}_sensitivity_curve.png'
+        figure_name = figure_name = f'test_{label}_sensitivity_curve.png'
         plt.savefig(join(metric_path, figure_name))
 
         plt.figure(figsize=(10,6))
-        plt.scatter(y_test, test_pred - y_test, c=other_label_data)
-        cb = plt.colorbar()
-        cb.set_label(f'Color Scale latency')
+        scatter = plt.scatter(y_test, test_pred - y_test, c=other_label_data)
+        plt.title(f'{label} Residual plot')
+        plt.xlabel(label)
+        plt.ylabel('Residual')
+        
+        plt.axhline(y=0.0, color='r', linestyle='-', alpha=0.5)
+        
+        if label == 'loss':
+            plt.axes().xaxis.set_major_formatter(plt.FuncFormatter(format_func1))
+            plt.colorbar(scatter, format=ticker.FuncFormatter(format_func2)).set_label(f'Color Scale of {other}')
+        if label == 'latency':
+            plt.axes().xaxis.set_major_formatter(plt.FuncFormatter(format_func2))
+            plt.colorbar(scatter, format=ticker.FuncFormatter(format_func1)).set_label(f'Color Scale of {other}')
+
 
         figure_name = f'test_residual_{label}_plot.png'
         plt.savefig(join(metric_path, figure_name))
+        
         
     else:
         featurelst = listdir(data_path)
@@ -88,31 +122,25 @@ def generate_metrics(model, time, label, metric_path, data_path, test_data_path,
             y_test = np.log(test_data['label_latency'])
             other_label_data = np.log(vdata['label_packet_loss'])
 
+        index = 0
         for i in range(len(thresh_l)):
+            if thresh_l[i] == .1:
+                index = i
             acc[i] += get_acc(y_train, train_pred, thresh_l[i])
             valid_acc[i] = get_acc(y_valid, valid_pred, thresh_l[i])
             test_acc[i] = get_acc(y_test, test_pred, thresh_l[i])
 
-            
-        def format_func1(value, tick_number):
-            # find number of multiples of pi/2
-            N = np.exp(value).astype(int)
-            return f"1/{N}"
-
-        def format_func2(value, tick_number):
-            # find number of multiples of pi/2
-            N = np.exp(value).astype(int)
-            return N
             
         plt.figure(figsize=(10,6))
 
         plt.plot(thresh_l, acc, label=f'training {label}')
         plt.plot(thresh_l, valid_acc, label=f'validation {label}')
         plt.plot(thresh_l, test_acc, label=f'test {label}')
-        plt.title(f'{label} sensitivity curve')
+        plt.title(f'Accuracy at 10% tolerance: training:{acc[index]:.3f}, validation:{valid_acc[index]:.3f}, test_acc:{test_acc[index]:.3f}')
         plt.xlabel('threshold')
         plt.ylabel('accuracy')
         plt.axvline(x=0.10, color='r', linestyle='--', alpha=0.5)
+        plt.suptitle(f'{label} sensitivity curve', fontsize=18)
 
         plt.legend()
 
@@ -129,10 +157,10 @@ def generate_metrics(model, time, label, metric_path, data_path, test_data_path,
         
         if label == 'loss':
             plt.axes().xaxis.set_major_formatter(plt.FuncFormatter(format_func1))
-            plt.colorbar(scatter, format=ticker.FuncFormatter(format_func2)).set_label(f'Color Scale of log {other}')
+            plt.colorbar(scatter, format=ticker.FuncFormatter(format_func2)).set_label(f'Color Scale of {other}')
         if label == 'latency':
             plt.axes().xaxis.set_major_formatter(plt.FuncFormatter(format_func2))
-            plt.colorbar(scatter, format=ticker.FuncFormatter(format_func1)).set_label(f'Color Scale of log {other}')
+            plt.colorbar(scatter, format=ticker.FuncFormatter(format_func1)).set_label(f'Color Scale of {other}')
 
 
         figure_name = f'{time}_{label}_residual_plot.png'

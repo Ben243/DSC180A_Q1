@@ -6,7 +6,7 @@ import pandas as pd
 
 sys.path.insert(0, 'src')
 from etl import clean_label_data
-from eda import plot_timeseries, plot_histogram, plot_correlation
+from eda import plot_timeseries, plot_histogram, plot_correlation, plot_label_frequency
 from train import train_model
 from utils import convert_notebook
 from os import listdir, remove
@@ -64,8 +64,9 @@ def etl_(raw_data_path=raw_data_path, temp_path=temp_path, out_path=out_path, te
         else:
             df.to_csv(join(out_path, filename), header=False, mode='a', index=False)
 
-def eda_(temp_path=figure_data_path, img_path=img_path, feature_path='test/test_features'):
+def eda_(temp_path=figure_data_path, img_path=img_path, feature_path=out_path):
     '''Generates all relevant visualizations used in early data analysis.'''
+    feature_path = join(feature_path, listdir(feature_path)[-1])
 
     csv1 = [join(temp_path, "s2_200-100-iperf.csv"), join(temp_path, "s2_200-500-iperf.csv")]
     csv2 = [join(temp_path, "s2_200-10000-iperf.csv"), join(temp_path, "s2_200-50000-iperf.csv")]
@@ -80,13 +81,14 @@ def eda_(temp_path=figure_data_path, img_path=img_path, feature_path='test/test_
     
     plot_correlation(feature_path, img_path)
     
+    plot_label_frequency(feature_path, img_path)
     return
 
-def train_(data_path=out_path, model_path=model_path, model_name='model'):
+def train_(data_path=out_path, model_path=model_path, model_name='model', test=False):
     '''trains a model to predict latency and packet loss with the output of etl and features.'''
     # train_model(out_path, model_path, 'model.pyc')
     
-    train_model(data_path, model_path, model_name=model_name, test=True)
+    train_model(data_path, model_path, model_name=model_name, test=test)
     metrics_
 
 def test_():
@@ -94,9 +96,8 @@ def test_():
     
     clean_()
     etl_(raw_data_path=test_path, temp_path = "test/testtemp", out_path = 'test/test_features', test=True)
-    feature_path = join('test/test_features', listdir('test/test_features')[0])
-    eda_(feature_path = feature_path)
-    train_(data_path='test/test_features', model_name='test_model')
+    eda_(feature_path = 'test/test_features')
+    train_(data_path='test/test_features', model_name='test_model', test=True)
     metrics_('latency_test_model.pyc', 'loss_test_model.pyc', test=True)
     
     
@@ -142,8 +143,8 @@ def main(targets):
         etl_()
         
     if 'eda' in targets: 
-        etl_(raw_data_path=test_path, temp_path = "test/testtemp", out_path = 'test/test_features')
-        eda_(feature_path = join('test/test_features', listdir('test/test_features')[0]))
+        etl_(raw_data_path=test_path, temp_path = "test/testtemp", out_path = 'test/test_features', test=True)
+        eda_(feature_path ='test/test_features')
 
     if 'train' in targets:
         train_()

@@ -22,8 +22,10 @@ loss_model = model_params['loss_model']
 latency_model = model_params['latency_model']
 PCA_COMPONENTS = model_params['PCA_COMPONENTS']
 n_jobs = model_params['n_jobs']
-n_estimators = model_params['n_estimators']
-max_depth = model_params['max_depth']
+n_estimators_loss = model_params['n_estimators_loss']
+max_depth_loss = model_params['max_depth_loss']
+n_estimators_latency = model_params['n_estimators_latency']
+max_depth_latency = model_params['max_depth_latency']
 test_size = model_params['test_size']
 randomstate = 2021
 
@@ -66,7 +68,7 @@ def train_model(data_path, pickle_path, out_path='data/out', model_name=None, te
         ("selector", ColumnTransformer([("selector", "passthrough", loss_cols)], remainder="drop")),
         ('impute', SimpleImputer(missing_values=np.nan, strategy='mean')),
         ('reduce_dim', PCA(PCA_COMPONENTS)), 
-        ('clf', RandomForestRegressor(n_jobs=n_jobs, n_estimators=n_estimators, max_depth=max_depth))])
+        ('clf', RandomForestRegressor(n_jobs=n_jobs, n_estimators=n_estimators_loss, max_depth=max_depth_loss))])
     loss_pipe.fit(loss_X, loss_y)
 
     # data['pred_loss'] = loss_forest.predict(loss_X) # adding prediction loss as a feature for latency
@@ -80,7 +82,7 @@ def train_model(data_path, pickle_path, out_path='data/out', model_name=None, te
         ("selector", ColumnTransformer([("selector", "passthrough", latency_cols)], remainder="drop")),
         ('impute', SimpleImputer(missing_values=np.nan, strategy='mean')),
         ('reduce_dim', PCA(PCA_COMPONENTS)), 
-        ('clf', RandomForestRegressor(n_jobs=n_jobs, n_estimators=n_estimators, max_depth=max_depth))])
+        ('clf', RandomForestRegressor(n_jobs=n_jobs, n_estimators=n_estimators_latency, max_depth=max_depth_latency))])
 
     latency_pipe.fit(latency_X, latency_y)
 

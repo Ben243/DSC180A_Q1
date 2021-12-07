@@ -14,6 +14,16 @@ def plot_correlation(data_filename, outdir, filename="correlation_matrix.png"):
     corr_matrix = sns.heatmap(data.corr(), cmap="coolwarm",linewidths=.05);
     fig = corr_matrix.get_figure()
     fig.savefig(os.path.join(outdir, filename))
+    
+
+    return
+
+def plot_label_frequency(data_filename, outdir, filename="label_frequency.png"):
+    plt.figure(figsize=(8, 6))
+    data = pd.read_csv(data_filename)
+    data[['label_latency', 'label_packet_loss']].plot(kind='scatter', x='label_latency', y='label_packet_loss', title='Packet Loss Against Latency: Label Scatterplot')
+    plt.savefig(os.path.join(outdir, filename))
+    
     return
 
 """
