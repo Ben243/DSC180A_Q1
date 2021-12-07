@@ -6,6 +6,7 @@ import json
 import pickle
 import sys
 
+from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.decomposition import PCA
@@ -28,17 +29,25 @@ randomstate = 2021
 
 
 # def train_model(data_path, pickle_path, filename): #TODO make a decision on 'filename' parameter
-def train_model(data_path, pickle_path, out_path='data/out', model_name='model'):
+def train_model(data_path, pickle_path, out_path='data/out', model_name='model', test=False):
 
     ## load feature output
     featurelst = listdir(data_path)
+    featurelst = [file for file in featurelst if 'feature' in file]
     featurelst.sort()
     data = pd.read_csv(join(data_path,featurelst[-1])) ## gets latest feature file from feature path
 
-    train_data, validation_data = train_test_split(data, test_size=test_size, random_state=randomstate)
-    train_data.to_csv(join(out_path,'0_train_out.csv'))
-    validation_data.to_csv(join(out_path,'0_validation_out.csv'))
-
+    tm = int(time())
+    
+    if not test:
+        train_data, validation_data = train_test_split(data, test_size=test_size, random_state=randomstate)
+        train_data.to_csv(join(out_path,f'train_{tm}.csv'))
+        validation_data.to_csv(join(out_path,f'validation_{tm}.csv'))
+    else:
+        tm = 'test'
+        data.to_csv('test/test_features/test_featureset.csv')
+        train_data = data
+    
     ## feature selection
     loss_cols = [
         "mean_tdelta_min", 'mean_tdelta_max', 'mean_tdelta_mean', 'max_tdelta_var', 
@@ -54,7 +63,9 @@ def train_model(data_path, pickle_path, out_path='data/out', model_name='model')
 
     
     loss_pipe = Pipeline(steps=[
+        ("selector", ColumnTransformer([("selector", "passthrough", loss_cols)], remainder="drop")),
         ('impute', SimpleImputer(missing_values=np.nan, strategy='mean')),
+        ('reduce_dim', PCA(PCA_COMPONENTS)), 
         ('clf', RandomForestRegressor(n_jobs=n_jobs, n_estimators=n_estimators, max_depth=max_depth))])
     loss_pipe.fit(loss_X, loss_y)
 
@@ -65,6 +76,7 @@ def train_model(data_path, pickle_path, out_path='data/out', model_name='model')
     latency_y = np.log(train_data['label_latency'])
 
     latency_pipe = Pipeline(steps=[
+        ("selector", ColumnTransformer([("selector", "passthrough", latency_cols)], remainder="drop")),
         ('impute', SimpleImputer(missing_values=np.nan, strategy='mean')),
         ('reduce_dim', PCA(PCA_COMPONENTS)), 
         ('clf', RandomForestRegressor(n_jobs=n_jobs, n_estimators=n_estimators, max_depth=max_depth))])
@@ -73,11 +85,11 @@ def train_model(data_path, pickle_path, out_path='data/out', model_name='model')
 
     ## model saving
 
-    with open(join(pickle_path, 'loss_' + model_name + '.pyc'),"wb") as f:
+    with open(join(pickle_path, f'loss_{tm}.pyc'),"wb") as f:
         pickle.dump(loss_pipe, f)
 
     # with open(join(pickle_path, latency_model),"wb") as f:
     #     pickle.dump(latency_forest, f)
 
-    with open(join(pickle_path, 'latency_' + model_name + '.pyc'),"wb") as f:
+    with open(join(pickle_path, f'latency_{tm}.pyc'),"wb") as f:
         pickle.dump(latency_pipe, f)
